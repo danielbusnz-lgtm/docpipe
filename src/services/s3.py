@@ -8,7 +8,7 @@ Typical usage example:
 
     import boto3
     s3_client = boto3.client("s3")
-    s3_key = upload_file(s3_client, "docpipe-documents", file_bytes, "invoice.pdf")
+    s3_key = upload_file(s3_client, "inkvault-documents", file_bytes, "invoice.pdf")
     local_path = download_to_temp(s3_client, "docpipe-documents", s3_key)
 """
 

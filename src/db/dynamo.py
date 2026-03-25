@@ -7,7 +7,7 @@ Postgres stores the actual extracted data.
 Typical usage example:
 
     client = boto3.resource("dynamodb")
-    table = client.Table("docpipe-metadata")
+    table = client.Table("inkvault-metadata")
     put_document(table, document_id="abc-123", filename="invoice.pdf", s3_key="docs/invoice.pdf")
     update_status(table, document_id="abc-123", status="completed")
 """
