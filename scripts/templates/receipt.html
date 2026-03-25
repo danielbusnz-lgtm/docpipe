@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+    @page { size: 80mm 297mm; margin: 5mm; }
+    body { font-family: {{ font }}; font-size: 9pt; color: #111; max-width: 70mm; margin: 0 auto; }
+    .store-header { text-align: center; margin-bottom: 8px; }
+    .store-name { font-size: 14pt; font-weight: bold; }
+    .store-details { font-size: 7pt; color: #555; }
+    .divider { border-top: 1px dashed #999; margin: 6px 0; }
+    .meta { font-size: 8pt; color: #444; margin-bottom: 6px; }
+    .meta span { display: block; }
+    .items { width: 100%; margin-bottom: 6px; }
+    .items td { font-size: 8pt; padding: 2px 0; vertical-align: top; }
+    .items td.price { text-align: right; white-space: nowrap; }
+    .items td.desc { max-width: 45mm; }
+    .totals { width: 100%; margin-bottom: 6px; }
+    .totals td { font-size: 8pt; padding: 2px 0; }
+    .totals td.val { text-align: right; }
+    .totals .grand td { font-size: 11pt; font-weight: bold; border-top: 1px solid #333; padding-top: 4px; }
+    .payment { font-size: 8pt; margin-bottom: 6px; }
+    .footer { text-align: center; font-size: 7pt; color: #888; margin-top: 10px; }
+    .loyalty { font-size: 7pt; color: #555; margin-bottom: 6px; text-align: center; }
+    .barcode { text-align: center; font-family: monospace; font-size: 10pt; letter-spacing: 2px; margin: 8px 0; }
+</style>
+</head>
+<body>
+    <div class="store-header">
+        <div class="store-name">{{ store_name }}</div>
+        <div class="store-details">
+            {{ store_address }}<br>
+            {{ store_city }}, {{ store_state }} {{ store_zip }}<br>
+            {{ store_phone }}
+        </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="meta">
+        <span>{{ date_label }}: {{ transaction_date }}</span>
+        {% if transaction_time %}<span>Time: {{ transaction_time }}</span>{% endif %}
+        <span>{{ transaction_label }}: {{ transaction_id }}</span>
+        {% if cashier %}<span>Cashier: {{ cashier }}</span>{% endif %}
+        {% if register %}<span>Register: {{ register }}</span>{% endif %}
+    </div>
+
+    <div class="divider"></div>
+
+    <table class="items">
+        {% for item in line_items %}
+        <tr>
+            <td class="desc">{{ item.description }}{% if item.quantity > 1 %} x{{ item.quantity }}{% endif %}</td>
+            <td class="price">{{ currency_symbol }}{{ "%.2f"|format(item.amount) }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <div class="divider"></div>
+
+    <table class="totals">
+        <tr>
+            <td>Subtotal</td>
+            <td class="val">{{ currency_symbol }}{{ "%.2f"|format(subtotal) }}</td>
+        </tr>
+        {% if discount %}
+        <tr>
+            <td>Discount{% if discount_desc %} ({{ discount_desc }}){% endif %}</td>
+            <td class="val">-{{ currency_symbol }}{{ "%.2f"|format(discount) }}</td>
+        </tr>
+        {% endif %}
+        <tr>
+            <td>Tax ({{ tax_rate }}%)</td>
+            <td class="val">{{ currency_symbol }}{{ "%.2f"|format(tax) }}</td>
+        </tr>
+        <tr class="grand">
+            <td>TOTAL</td>
+            <td class="val">{{ currency_symbol }}{{ "%.2f"|format(total) }}</td>
+        </tr>
+    </table>
+
+    <div class="payment">
+        {{ payment_method }}{% if card_last_four %} ending {{ card_last_four }}{% endif %}<br>
+        {% if auth_code %}Auth: {{ auth_code }}<br>{% endif %}
+        {% if change_due %}Change: {{ currency_symbol }}{{ "%.2f"|format(change_due) }}{% endif %}
+    </div>
+
+    {% if loyalty_points %}
+    <div class="divider"></div>
+    <div class="loyalty">
+        Points earned: {{ loyalty_points }}<br>
+        Total points: {{ loyalty_balance }}
+    </div>
+    {% endif %}
+
+    <div class="divider"></div>
+
+    {% if barcode %}
+    <div class="barcode">{{ barcode }}</div>
+    {% endif %}
+
+    <div class="footer">
+        {{ footer_message }}<br>
+        {% if return_policy %}{{ return_policy }}<br>{% endif %}
+        {% if website %}{{ website }}{% endif %}
+    </div>
+</body>
+</html>

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+    @page { size: A4; margin: 2cm; }
+    body { font-family: {{ font }}; font-size: 10pt; color: #333; }
+    .header { display: flex; justify-content: space-between; margin-bottom: 30px; }
+    .company-info { max-width: 60%; }
+    .company-name { font-size: 16pt; font-weight: bold; color: #1a1a2e; margin-bottom: 5px; }
+    .company-details { font-size: 8pt; color: #666; line-height: 1.4; }
+    .doc-title { font-size: 20pt; font-weight: bold; color: #1a1a2e; text-align: right; margin-bottom: 5px; }
+    .doc-meta { text-align: right; font-size: 9pt; color: #555; }
+    .doc-meta span { display: block; margin-bottom: 3px; }
+    .addresses { display: flex; justify-content: space-between; margin-bottom: 25px; }
+    .address-block { width: 45%; }
+    .address-label { font-size: 8pt; font-weight: bold; color: #888; text-transform: uppercase; margin-bottom: 5px; }
+    .address-text { font-size: 9pt; line-height: 1.5; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    th { background-color: #1a1a2e; color: white; padding: 8px 10px; text-align: left; font-size: 9pt; }
+    th.amount { text-align: right; }
+    td { padding: 7px 10px; border-bottom: 1px solid #eee; font-size: 9pt; }
+    td.amount { text-align: right; }
+    .totals { width: 40%; margin-left: auto; }
+    .totals td { border-bottom: 1px solid #ddd; }
+    .totals .total-row td { font-weight: bold; font-size: 11pt; border-top: 2px solid #1a1a2e; border-bottom: none; color: #1a1a2e; }
+    .footer { margin-top: 30px; font-size: 8pt; color: #888; border-top: 1px solid #ddd; padding-top: 10px; }
+    .terms { margin-top: 15px; font-size: 8pt; color: #555; }
+    .po-line { font-size: 9pt; color: #555; margin-bottom: 15px; }
+</style>
+</head>
+<body>
+    <div class="header">
+        <div class="company-info">
+            <div class="company-name">{{ vendor_name }}</div>
+            <div class="company-details">
+                {{ vendor_address }}<br>
+                {{ vendor_city }}, {{ vendor_state }} {{ vendor_zip }}<br>
+                Phone: {{ vendor_phone }}<br>
+                {{ vendor_email }}
+                {% if vendor_tax_id %}<br>Tax ID: {{ vendor_tax_id }}{% endif %}
+            </div>
+        </div>
+        <div>
+            <div class="doc-title">{{ doc_label }}</div>
+            <div class="doc-meta">
+                <span><strong>{{ doc_number_label }}:</strong> {{ doc_number }}</span>
+                <span><strong>Date:</strong> {{ doc_date }}</span>
+                <span><strong>Due Date:</strong> {{ due_date }}</span>
+                {% if po_number %}<span><strong>PO #:</strong> {{ po_number }}</span>{% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="addresses">
+        <div class="address-block">
+            <div class="address-label">Bill To</div>
+            <div class="address-text">
+                {{ bill_to_name }}<br>
+                {% if bill_to_company %}{{ bill_to_company }}<br>{% endif %}
+                {{ bill_to_address }}<br>
+                {{ bill_to_city }}, {{ bill_to_state }} {{ bill_to_zip }}
+            </div>
+        </div>
+        {% if ship_to_name %}
+        <div class="address-block">
+            <div class="address-label">Ship To</div>
+            <div class="address-text">
+                {{ ship_to_name }}<br>
+                {{ ship_to_address }}<br>
+                {{ ship_to_city }}, {{ ship_to_state }} {{ ship_to_zip }}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if po_number %}
+    <div class="po-line">Purchase Order: {{ po_number }} | Terms: {{ payment_terms }}</div>
+    {% endif %}
+
+    <table>
+        <thead>
+            <tr>
+                <th>Description</th>
+                <th>Qty</th>
+                <th class="amount">Unit Price</th>
+                <th class="amount">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in line_items %}
+            <tr>
+                <td>{{ item.description }}</td>
+                <td>{{ item.quantity }}</td>
+                <td class="amount">{{ currency_symbol }}{{ "%.2f"|format(item.unit_price) }}</td>
+                <td class="amount">{{ currency_symbol }}{{ "%.2f"|format(item.amount) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <table class="totals">
+        <tr>
+            <td>Subtotal</td>
+            <td class="amount">{{ currency_symbol }}{{ "%.2f"|format(subtotal) }}</td>
+        </tr>
+        {% if discount %}
+        <tr>
+            <td>Discount ({{ discount_pct }}%)</td>
+            <td class="amount">-{{ currency_symbol }}{{ "%.2f"|format(discount) }}</td>
+        </tr>
+        {% endif %}
+        {% if shipping %}
+        <tr>
+            <td>Shipping</td>
+            <td class="amount">{{ currency_symbol }}{{ "%.2f"|format(shipping) }}</td>
+        </tr>
+        {% endif %}
+        <tr>
+            <td>Tax ({{ tax_rate }}%)</td>
+            <td class="amount">{{ currency_symbol }}{{ "%.2f"|format(tax) }}</td>
+        </tr>
+        <tr class="total-row">
+            <td>TOTAL DUE</td>
+            <td class="amount">{{ currency_symbol }}{{ "%.2f"|format(total) }}</td>
+        </tr>
+    </table>
+
+    <div class="terms">
+        <strong>Payment Terms:</strong> {{ payment_terms }}<br>
+        {% if notes %}{{ notes }}{% endif %}
+    </div>
+
+    {% if bank_name %}
+    <div class="terms">
+        <strong>Bank Details:</strong><br>
+        {{ bank_name }} | Account: {{ bank_account }} | Routing: {{ bank_routing }}
+    </div>
+    {% endif %}
+
+    <div class="footer">
+        {{ vendor_name }} | {{ vendor_address }}, {{ vendor_city }}, {{ vendor_state }} {{ vendor_zip }} | {{ vendor_phone }}
+    </div>
+</body>
+</html>
