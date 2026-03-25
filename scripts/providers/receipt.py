@@ -1,12 +1,17 @@
 """Faker provider for generating realistic receipt data."""
 
+import json
 import random
+from pathlib import Path
 
 from faker.providers import BaseProvider
 
 from providers.style import generate_style
 
-ITEMS_BY_STORE = {
+VOCAB_PATH = Path(__file__).parent.parent.parent / "classifier" / "vocab" / "items.json"
+
+# keep specific items that the vocab file doesn't have (sized products, branded feel)
+EXTRA_ITEMS = {
     "grocery": [
         "Organic Bananas (bunch)", "Whole Milk 1 Gallon", "Sourdough Bread Loaf",
         "Free Range Eggs Dozen", "Baby Spinach 5oz", "Chicken Breast 2lb",
@@ -35,9 +40,6 @@ ITEMS_BY_STORE = {
         "Laptop Stand Aluminum", "Webcam 1080p", "SD Card 128GB",
         "Power Bank 20000mAh", "Keyboard Mechanical", "Mouse Pad XL",
     ],
-    "gas_station": [
-        "Unleaded Regular", "Unleaded Plus", "Unleaded Premium", "Diesel",
-    ],
     "pharmacy": [
         "Ibuprofen 200mg 100ct", "Multivitamin Daily 90ct", "Bandages Assorted 30ct",
         "Hand Sanitizer 8oz", "Cough Syrup 8oz", "Allergy Relief 24hr 30ct",
@@ -45,6 +47,40 @@ ITEMS_BY_STORE = {
         "Prescription Co-Pay", "Sunscreen SPF 50", "Eye Drops Lubricant",
     ],
 }
+
+GAS_ITEMS = ["Unleaded Regular", "Unleaded Plus", "Unleaded Premium", "Diesel"]
+
+# price ranges per store type
+STORE_PRICING = {
+    "grocery": (1.50, 25.00),
+    "restaurant": (6.00, 45.00),
+    "hardware": (3.00, 65.00),
+    "electronics": (8.00, 80.00),
+    "pharmacy": (4.00, 50.00),
+}
+
+_receipt_vocab: dict | None = None
+
+
+def _load_receipt_vocab() -> dict[str, list[str]]:
+    """Merge items.json grocery_receipt items with the hardcoded extras."""
+    global _receipt_vocab
+    if _receipt_vocab is None:
+        with open(VOCAB_PATH) as f:
+            vocab = json.load(f)
+
+        _receipt_vocab = {}
+        # grocery: merge vocab grocery_receipt + our specific items
+        grocery_from_vocab = vocab.get("grocery_receipt", [])
+        grocery_extras = EXTRA_ITEMS["grocery"]
+        _receipt_vocab["grocery"] = list(set(grocery_from_vocab + grocery_extras))
+
+        # other store types: use our hardcoded items (vocab doesn't have receipt-style items)
+        for store_type in ["restaurant", "hardware", "electronics", "pharmacy"]:
+            _receipt_vocab[store_type] = EXTRA_ITEMS[store_type]
+
+    return _receipt_vocab
+
 
 FOOTER_MESSAGES = [
     "THANK YOU FOR SHOPPING WITH US!",
@@ -63,42 +99,39 @@ RETURN_POLICIES = [
     None,
 ]
 
-RECEIPT_FONTS = ["Courier New, monospace", "Arial, sans-serif", "Lucida Console, monospace"]
-
 
 class ReceiptProvider(BaseProvider):
     """Generate complete receipt data dicts ready for Jinja2 templates."""
 
     def receipt_store_type(self) -> str:
-        return self.random_element(list(ITEMS_BY_STORE.keys()))
+        return self.random_element(["grocery", "restaurant", "hardware",
+                                     "electronics", "gas_station", "pharmacy"])
 
     def receipt_line_items(self, store_type: str | None = None) -> list[dict]:
         """Generate line items appropriate for the store type."""
         if store_type is None:
             store_type = self.receipt_store_type()
 
-        pool = ITEMS_BY_STORE[store_type]
-
-        # gas stations are special: one fuel purchase
+        # gas stations are special
         if store_type == "gas_station":
-            fuel = self.random_element(pool)
+            fuel = self.random_element(GAS_ITEMS)
             gallons = round(random.uniform(3, 22), 3)
             ppg = round(random.uniform(2.60, 4.80), 3)
-            return [{"description": f"{fuel} {gallons} gal @ ${ppg}/gal", "quantity": 1, "amount": round(gallons * ppg, 2)}]
+            return [{"description": f"{fuel} {gallons} gal @ ${ppg}/gal",
+                     "quantity": 1, "amount": round(gallons * ppg, 2)}]
+
+        vocab = _load_receipt_vocab()
+        pool = vocab.get(store_type, vocab["grocery"])
+        price_range = STORE_PRICING.get(store_type, (1.50, 50.00))
 
         count = self.random_int(min=2, max=min(8, len(pool)))
         chosen = random.sample(pool, count)
         items = []
         for desc in chosen:
             qty = self.random_int(min=1, max=4)
-            # restaurants are pricier per item than grocery
-            if store_type == "restaurant":
-                price = round(random.uniform(6.00, 45.00), 2)
-            elif store_type == "electronics":
-                price = round(random.uniform(8.00, 80.00), 2)
-            else:
-                price = round(random.uniform(1.50, 65.00), 2)
-            items.append({"description": desc, "quantity": qty, "amount": round(qty * price, 2)})
+            price = round(random.uniform(*price_range), 2)
+            items.append({"description": desc, "quantity": qty,
+                         "amount": round(qty * price, 2)})
         return items
 
     def receipt_data(self, store_type: str | None = None) -> dict:
@@ -126,7 +159,6 @@ class ReceiptProvider(BaseProvider):
         show_loyalty = random.random() > 0.6
 
         return {
-            "font": self.random_element(RECEIPT_FONTS),
             "store_name": store_name,
             "store_address": self.generator.street_address(),
             "store_city": self.generator.city(),
@@ -162,12 +194,12 @@ class ReceiptProvider(BaseProvider):
             "return_policy": self.random_element(RETURN_POLICIES),
             "website": self.generator.url() if random.random() > 0.5 else None,
             **generate_style(),
-            # override body_font: receipts are mostly monospace
+            # override: receipts mostly monospace
             "body_font": random.choice([
                 "'Courier New', Courier, monospace",
                 "'Courier New', Courier, monospace",
                 "'Courier New', Courier, monospace",
                 "'Lucida Console', monospace",
-                "Arial, sans-serif",  # some modern POS systems
+                "Arial, sans-serif",
             ]),
         }
