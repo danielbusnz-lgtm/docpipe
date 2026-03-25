@@ -4,6 +4,8 @@ import random
 
 from faker.providers import BaseProvider
 
+from providers.style import generate_style
+
 ITEMS_BY_STORE = {
     "grocery": [
         "Organic Bananas (bunch)", "Whole Milk 1 Gallon", "Sourdough Bread Loaf",
@@ -159,4 +161,5 @@ class ReceiptProvider(BaseProvider):
             "footer_message": self.random_element(FOOTER_MESSAGES),
             "return_policy": self.random_element(RETURN_POLICIES),
             "website": self.generator.url() if random.random() > 0.5 else None,
+            **generate_style(),
         }

@@ -4,6 +4,8 @@ import random
 
 from faker.providers import BaseProvider
 
+from providers.style import generate_style
+
 ITEMS_BY_INDUSTRY = {
     "construction": [
         ("Site preparation and excavation", 1, (2000, 15000)),
@@ -215,4 +217,5 @@ class InvoiceProvider(BaseProvider):
             "bank_name": self.generator.company() + " Bank" if show_bank else None,
             "bank_account": self.generator.iban() if show_bank else None,
             "bank_routing": self.generator.aba() if show_bank else None,
+            **generate_style(),
         }

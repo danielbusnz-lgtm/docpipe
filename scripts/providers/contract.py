@@ -4,6 +4,8 @@ import random
 
 from faker.providers import BaseProvider
 
+from providers.style import generate_style
+
 CONTRACT_TEMPLATES = {
     "consulting": {
         "title": "Consulting Services Agreement",
@@ -237,4 +239,5 @@ class ContractProvider(BaseProvider):
             "sections": sections,
             "exhibits": self.random_element(EXHIBIT_SETS),
             "page_count": self.random_int(min=2, max=8),
+            **generate_style(),
         }
