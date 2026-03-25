@@ -23,10 +23,9 @@ class DocumentType(str, Enum):
 
 
 class ProcessingStatus(str, Enum):
-    """Stages a document moves through in the pipeline.
+    """Pipeline status, stored in DynamoDB so callers can poll for progress.
 
-    The status gets updated in DynamoDB after each step so callers
-    can poll for progress. FAILED captures the error_message too.
+    FAILED also captures the error_message.
     """
 
     UPLOADED = "uploaded"
