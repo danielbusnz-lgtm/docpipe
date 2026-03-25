@@ -125,9 +125,9 @@ class OtherProvider(BaseProvider):
             transactions.append({
                 "date": self.generator.date_between(start_date="-30d", end_date="today").strftime("%m/%d"),
                 "description": desc,
-                "debit": f"{amount:.2f}" if is_debit else "",
-                "credit": f"{amount:.2f}" if not is_debit else "",
-                "balance": f"{balance:.2f}",
+                "debit": f"{amount:,.2f}" if is_debit else "",
+                "credit": f"{amount:,.2f}" if not is_debit else "",
+                "balance": f"{balance:,.2f}",
             })
 
         return {
@@ -140,8 +140,8 @@ class OtherProvider(BaseProvider):
             "account_number": "****" + self.generator.numerify("####"),
             "account_type": self.random_element(["Checking", "Savings", "Money Market"]),
             "statement_period": f"{self.generator.date_between(start_date='-30d').strftime('%m/%d/%Y')} - {self.generator.date_between(start_date='-3d').strftime('%m/%d/%Y')}",
-            "opening_balance": f"{opening_balance:.2f}",
-            "closing_balance": f"{balance:.2f}",
+            "opening_balance": f"{opening_balance:,.2f}",
+            "closing_balance": f"{balance:,.2f}",
             "transactions": transactions,
             **generate_style(),
         }
