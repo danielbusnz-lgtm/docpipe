@@ -31,6 +31,62 @@ FONT_STACKS = [
 
 TABLE_STYLES = ["bordered", "zebra", "minimal", "clean"]
 
+# CSS Grid layouts for invoices. Same HTML sections, rearranged visually.
+# Each string is injected as an inline style on the root grid container.
+INVOICE_LAYOUTS = {
+    "classic": """
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-areas:
+            "header   meta"
+            "billing  shipping"
+            "items    items"
+            "totals   totals"
+            "terms    terms"
+            "footer   footer";
+        gap: 20px;
+    """,
+    "sidebar": """
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        grid-template-areas:
+            "header   items"
+            "meta     items"
+            "billing  items"
+            "shipping totals"
+            "terms    terms"
+            "footer   footer";
+        gap: 16px;
+    """,
+    "single_col": """
+        display: grid;
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "header"
+            "meta"
+            "billing"
+            "shipping"
+            "items"
+            "totals"
+            "terms"
+            "footer";
+        gap: 14px;
+    """,
+    "modern": """
+        display: grid;
+        grid-template-columns: 1fr 280px;
+        grid-template-areas:
+            "header   header"
+            "items    meta"
+            "items    billing"
+            "items    shipping"
+            "totals   totals"
+            "terms    terms"
+            "footer   footer";
+        gap: 20px;
+    """,
+}
+
 
 def generate_style() -> dict:
     """Return a dict of randomized CSS values for one document.
@@ -78,4 +134,8 @@ def generate_style() -> dict:
         # layout toggles
         "header_align": random.choice(["left", "left", "center"]),  # left is more common
         "totals_width": f"{random.randint(35, 50)}%",
+
+        # grid layout (invoice only, receipts/contracts ignore this)
+        "layout_name": (ln := random.choice(list(INVOICE_LAYOUTS.keys()))),
+        "layout_css": INVOICE_LAYOUTS[ln],
     }
