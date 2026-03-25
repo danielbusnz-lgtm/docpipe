@@ -17,19 +17,11 @@ Typical usage example:
 
 import uuid
 from datetime import datetime, timezone
+from typing import Optional
 
-from sqlalchemy import (
-    ARRAY,
-    Column,
-    DateTime,
-    Float,
-    ForeignKey,
-    Numeric,
-    String,
-    Text,
-)
-from sqlalchemy.dialects.postgresql import JSONB, UUID
-from sqlalchemy.orm import DeclarativeBase, relationship
+from sqlalchemy import ForeignKey, Numeric, String, Text
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
 class Base(DeclarativeBase):
@@ -50,16 +42,16 @@ class Document(Base):
 
     __tablename__ = "documents"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    filename = Column(String(255), nullable=False)
-    s3_key = Column(String(500), nullable=False)
-    doc_type = Column(String(50))
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    filename: Mapped[str] = mapped_column(String(255))
+    s3_key: Mapped[str] = mapped_column(String(500))
+    doc_type: Mapped[Optional[str]] = mapped_column(String(50), default=None)
+    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc))
+    updated_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc))
 
-    invoice_extraction = relationship("InvoiceExtractionRow", back_populates="document", uselist=False)
-    receipt_extraction = relationship("ReceiptExtractionRow", back_populates="document", uselist=False)
-    contract_extraction = relationship("ContractExtractionRow", back_populates="document", uselist=False)
+    invoice_extraction: Mapped[Optional["InvoiceExtractionRow"]] = relationship(back_populates="document", uselist=False)
+    receipt_extraction: Mapped[Optional["ReceiptExtractionRow"]] = relationship(back_populates="document", uselist=False)
+    contract_extraction: Mapped[Optional["ContractExtractionRow"]] = relationship(back_populates="document", uselist=False)
 
 
 class InvoiceExtractionRow(Base):
@@ -82,22 +74,25 @@ class InvoiceExtractionRow(Base):
 
     __tablename__ = "invoice_extractions"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    document_id = Column(UUID(as_uuid=True), ForeignKey("documents.id", ondelete="CASCADE"), nullable=False)
-    vendor_name = Column(String(255), nullable=False)
-    invoice_number = Column(String(100))
-    invoice_date = Column(String(50))
-    due_date = Column(String(50))
-    subtotal = Column(Numeric(12, 2))
-    tax = Column(Numeric(12, 2))
-    total_amount = Column(Numeric(12, 2), nullable=False)
-    currency = Column(String(10), default="USD")
-    payment_terms = Column(String(100))
-    raw_json = Column(JSONB)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    document_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("documents.id", ondelete="CASCADE"))
+    vendor_name: Mapped[str] = mapped_column(String(255))
+    invoice_number: Mapped[Optional[str]] = mapped_column(String(100), default=None)
+    invoice_date: Mapped[Optional[str]] = mapped_column(String(50), default=None)
+    due_date: Mapped[Optional[str]] = mapped_column(String(50), default=None)
+    subtotal: Mapped[Optional[float]] = mapped_column(Numeric(12, 2), default=None)
+    tax: Mapped[Optional[float]] = mapped_column(Numeric(12, 2), default=None)
+    total_amount: Mapped[float] = mapped_column(Numeric(12, 2))
+    currency: Mapped[str] = mapped_column(String(10), default="USD")
+    payment_terms: Mapped[Optional[str]] = mapped_column(String(100), default=None)
+    raw_json: Mapped[Optional[dict]] = mapped_column(JSONB, default=None)
+    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc))
 
-    document = relationship("Document", back_populates="invoice_extraction")
-    line_items = relationship("LineItemRow", back_populates="extraction", foreign_keys="LineItemRow.extraction_id")
+    document: Mapped["Document"] = relationship(back_populates="invoice_extraction")
+    line_items: Mapped[list["LineItemRow"]] = relationship(
+        back_populates="invoice_extraction",
+        foreign_keys="LineItemRow.extraction_id",
+    )
 
 
 class ReceiptExtractionRow(Base):
@@ -117,19 +112,22 @@ class ReceiptExtractionRow(Base):
 
     __tablename__ = "receipt_extractions"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    document_id = Column(UUID(as_uuid=True), ForeignKey("documents.id", ondelete="CASCADE"), nullable=False)
-    vendor_name = Column(String(255), nullable=False)
-    receipt_date = Column(String(50))
-    subtotal = Column(Numeric(12, 2))
-    tax = Column(Numeric(12, 2))
-    total_amount = Column(Numeric(12, 2), nullable=False)
-    payment_method = Column(String(50))
-    raw_json = Column(JSONB)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    document_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("documents.id", ondelete="CASCADE"))
+    vendor_name: Mapped[str] = mapped_column(String(255))
+    receipt_date: Mapped[Optional[str]] = mapped_column(String(50), default=None)
+    subtotal: Mapped[Optional[float]] = mapped_column(Numeric(12, 2), default=None)
+    tax: Mapped[Optional[float]] = mapped_column(Numeric(12, 2), default=None)
+    total_amount: Mapped[float] = mapped_column(Numeric(12, 2))
+    payment_method: Mapped[Optional[str]] = mapped_column(String(50), default=None)
+    raw_json: Mapped[Optional[dict]] = mapped_column(JSONB, default=None)
+    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc))
 
-    document = relationship("Document", back_populates="receipt_extraction")
-    line_items = relationship("LineItemRow", back_populates="extraction", foreign_keys="LineItemRow.extraction_id")
+    document: Mapped["Document"] = relationship(back_populates="receipt_extraction")
+    line_items: Mapped[list["LineItemRow"]] = relationship(
+        back_populates="receipt_extraction",
+        foreign_keys="LineItemRow.extraction_id",
+    )
 
 
 class ContractExtractionRow(Base):
@@ -149,18 +147,18 @@ class ContractExtractionRow(Base):
 
     __tablename__ = "contract_extractions"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    document_id = Column(UUID(as_uuid=True), ForeignKey("documents.id", ondelete="CASCADE"), nullable=False)
-    parties = Column(ARRAY(Text))
-    effective_date = Column(String(50))
-    expiration_date = Column(String(50))
-    contract_value = Column(Numeric(12, 2))
-    key_terms = Column(ARRAY(Text))
-    summary = Column(Text)
-    raw_json = Column(JSONB)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    document_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("documents.id", ondelete="CASCADE"))
+    parties: Mapped[Optional[list]] = mapped_column(ARRAY(Text), default=None)
+    effective_date: Mapped[Optional[str]] = mapped_column(String(50), default=None)
+    expiration_date: Mapped[Optional[str]] = mapped_column(String(50), default=None)
+    contract_value: Mapped[Optional[float]] = mapped_column(Numeric(12, 2), default=None)
+    key_terms: Mapped[Optional[list]] = mapped_column(ARRAY(Text), default=None)
+    summary: Mapped[Optional[str]] = mapped_column(Text, default=None)
+    raw_json: Mapped[Optional[dict]] = mapped_column(JSONB, default=None)
+    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc))
 
-    document = relationship("Document", back_populates="contract_extraction")
+    document: Mapped["Document"] = relationship(back_populates="contract_extraction")
 
 
 class LineItemRow(Base):
@@ -179,19 +177,23 @@ class LineItemRow(Base):
 
     __tablename__ = "line_items"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    extraction_id = Column(UUID(as_uuid=True), nullable=False)
-    extraction_type = Column(String(50), nullable=False)
-    description = Column(String(500), nullable=False)
-    quantity = Column(Numeric(10, 3), default=1.0)
-    unit_price = Column(Numeric(12, 2))
-    amount = Column(Numeric(12, 2), nullable=False)
-    category = Column(String(100))
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    extraction_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True))
+    extraction_type: Mapped[str] = mapped_column(String(50))
+    description: Mapped[str] = mapped_column(String(500))
+    quantity: Mapped[Optional[float]] = mapped_column(Numeric(10, 3), default=1.0)
+    unit_price: Mapped[Optional[float]] = mapped_column(Numeric(12, 2), default=None)
+    amount: Mapped[float] = mapped_column(Numeric(12, 2))
+    category: Mapped[Optional[str]] = mapped_column(String(100), default=None)
+    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc))
 
-    extraction = relationship(
-        "InvoiceExtractionRow",
+    invoice_extraction: Mapped[Optional["InvoiceExtractionRow"]] = relationship(
         back_populates="line_items",
         foreign_keys=[extraction_id],
         primaryjoin="LineItemRow.extraction_id == InvoiceExtractionRow.id",
+    )
+    receipt_extraction: Mapped[Optional["ReceiptExtractionRow"]] = relationship(
+        back_populates="line_items",
+        foreign_keys=[extraction_id],
+        primaryjoin="LineItemRow.extraction_id == ReceiptExtractionRow.id",
     )
