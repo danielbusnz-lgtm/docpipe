@@ -63,6 +63,16 @@ NOTES = [
 
 DATE_FORMATS = ["%m/%d/%Y", "%B %d, %Y", "%d-%b-%Y", "%Y-%m-%d"]
 
+# field label pools for text variation
+BILL_TO_LABELS = ["Bill To", "Billed To", "Customer", "Sold To", "Client", "Buyer"]
+SHIP_TO_LABELS = ["Ship To", "Deliver To", "Shipping Address", "Delivery Address"]
+QTY_LABELS = ["Qty", "Quantity", "QTY", "Units", "Hrs", "Count"]
+UNIT_PRICE_LABELS = ["Unit Price", "Rate", "Price", "Unit Cost", "Each"]
+AMOUNT_LABELS = ["Amount", "Total", "Ext. Price", "Line Total", "Extended"]
+SUBTOTAL_LABELS = ["Subtotal", "Sub-Total", "Net Amount", "Sub Total"]
+TOTAL_LABELS = ["TOTAL DUE", "Total Due", "Amount Due", "Balance Due", "GRAND TOTAL", "Amount Owing"]
+TERMS_LABELS = ["Payment Terms", "Terms", "Payment Due", "Pay By"]
+
 
 class InvoiceProvider(BaseProvider):
     """Generate complete invoice data dicts ready for Jinja2 templates."""
@@ -173,5 +183,14 @@ class InvoiceProvider(BaseProvider):
             "bank_name": self.generator.company() + " Bank" if show_bank else None,
             "bank_account": self.generator.iban() if show_bank else None,
             "bank_routing": self.generator.aba() if show_bank else None,
+            # varied field labels
+            "bill_to_label": self.random_element(BILL_TO_LABELS),
+            "ship_to_label": self.random_element(SHIP_TO_LABELS),
+            "qty_label": self.random_element(QTY_LABELS),
+            "unit_price_label": self.random_element(UNIT_PRICE_LABELS),
+            "amount_label": self.random_element(AMOUNT_LABELS),
+            "subtotal_label": self.random_element(SUBTOTAL_LABELS),
+            "total_label": self.random_element(TOTAL_LABELS),
+            "terms_label": self.random_element(TERMS_LABELS),
             **generate_style(),
         }

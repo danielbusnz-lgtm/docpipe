@@ -193,6 +193,9 @@ class ReceiptProvider(BaseProvider):
             "footer_message": self.random_element(FOOTER_MESSAGES),
             "return_policy": self.random_element(RETURN_POLICIES),
             "website": self.generator.url() if random.random() > 0.5 else None,
+            # varied field labels
+            "subtotal_label": self.random_element(["Subtotal", "Sub Total", "Before Tax", "Sub-Total"]),
+            "total_label": self.random_element(["TOTAL", "Total", "Amount Paid", "Total Charged", "AMOUNT"]),
             **generate_style(),
             # override: receipts mostly monospace
             "body_font": random.choice([

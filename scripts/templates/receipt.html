@@ -79,7 +79,7 @@
 
     <table class="totals">
         <tr>
-            <td>Subtotal</td>
+            <td>{{ subtotal_label }}</td>
             <td class="val">{{ currency_symbol }}{{ "%.2f"|format(subtotal) }}</td>
         </tr>
         {% if discount %}
@@ -95,7 +95,7 @@
         </tr>
         {% endif %}
         <tr class="grand">
-            <td>TOTAL</td>
+            <td>{{ total_label }}</td>
             <td class="val">{{ currency_symbol }}{{ "%.2f"|format(total) }}</td>
         </tr>
     </table>

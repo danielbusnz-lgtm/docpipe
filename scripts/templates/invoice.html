@@ -71,7 +71,7 @@
         </div>
 
         <div class="inv-billing">
-            <div class="address-label">Bill To</div>
+            <div class="address-label">{{ bill_to_label }}</div>
             <div class="address-text">
                 {{ bill_to_name }}<br>
                 {% if bill_to_company %}{{ bill_to_company }}<br>{% endif %}
@@ -82,7 +82,7 @@
 
         <div class="inv-shipping">
             {% if ship_to_name %}
-            <div class="address-label">Ship To</div>
+            <div class="address-label">{{ ship_to_label }}</div>
             <div class="address-text">
                 {{ ship_to_name }}<br>
                 {{ ship_to_address }}<br>
@@ -99,9 +99,9 @@
                 <thead>
                     <tr>
                         <th>Description</th>
-                        <th>Qty</th>
-                        <th class="amount">Unit Price</th>
-                        <th class="amount">Amount</th>
+                        <th>{{ qty_label }}</th>
+                        <th class="amount">{{ unit_price_label }}</th>
+                        <th class="amount">{{ amount_label }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -120,7 +120,7 @@
         <div class="inv-totals">
             <table class="totals-table">
                 <tr>
-                    <td>Subtotal</td>
+                    <td>{{ subtotal_label }}</td>
                     <td class="amount">{{ currency_symbol }}{{ "%.2f"|format(subtotal) }}</td>
                 </tr>
                 {% if discount %}
@@ -140,14 +140,14 @@
                     <td class="amount">{{ currency_symbol }}{{ "%.2f"|format(tax) }}</td>
                 </tr>
                 <tr class="total-row">
-                    <td>TOTAL DUE</td>
+                    <td>{{ total_label }}</td>
                     <td class="amount">{{ currency_symbol }}{{ "%.2f"|format(total) }}</td>
                 </tr>
             </table>
         </div>
 
         <div class="inv-terms">
-            <strong>Payment Terms:</strong> {{ payment_terms }}<br>
+            <strong>{{ terms_label }}:</strong> {{ payment_terms }}<br>
             {% if notes %}{{ notes }}{% endif %}
             {% if bank_name %}
             <br><br><strong>Bank Details:</strong><br>
