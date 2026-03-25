@@ -138,4 +138,12 @@ def generate_style() -> dict:
         # grid layout (invoice only, receipts/contracts ignore this)
         "layout_name": (ln := random.choice(list(INVOICE_LAYOUTS.keys()))),
         "layout_css": INVOICE_LAYOUTS[ln],
+
+        # receipt-specific (invoices/contracts ignore these)
+        "receipt_width": (rw := random.choice([58, 80])),
+        "receipt_margin": 4 if rw == 80 else 3,
+        "receipt_printable": rw - (8 if rw == 80 else 6),
+        "receipt_desc_width": 35 if rw == 58 else 50,
+        "divider_style": random.choice(["dashed", "chars", "solid"]),
+        "divider_char": random.choice(["-", "=", "."]),
     }

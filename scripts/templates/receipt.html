@@ -2,26 +2,46 @@
 <html>
 <head>
 <style>
-    @page { size: 80mm 297mm; margin: 5mm; }
-    body { font-family: {{ font }}; font-size: 9pt; color: #111; max-width: 70mm; margin: 0 auto; }
-    .store-header { text-align: center; margin-bottom: 8px; }
+    @page { size: {{ receipt_width }}mm 297mm; margin: 0 {{ receipt_margin }}mm; }
+    body {
+        font-family: {{ body_font }};
+        font-size: {{ body_font_size }};
+        color: {{ text_color }};
+        margin: 0;
+        padding: 2mm 0;
+        max-width: {{ receipt_printable }}mm;
+    }
+
+    .store-header { text-align: center; margin-bottom: 2mm; }
     .store-name { font-size: 14pt; font-weight: bold; }
-    .store-details { font-size: 7pt; color: #555; }
-    .divider { border-top: 1px dashed #999; margin: 6px 0; }
-    .meta { font-size: 8pt; color: #444; margin-bottom: 6px; }
+    .store-details { font-size: 8pt; color: {{ muted_color }}; }
+
+    {% if divider_style == "dashed" %}
+    .divider { border-top: 1px dashed #000; margin: 2mm 0; }
+    {% elif divider_style == "chars" %}
+    .divider { text-align: center; margin: 1mm 0; font-size: 8pt; color: #999; overflow: hidden; white-space: nowrap; }
+    .divider::before { content: "{{ divider_char * 60 }}"; }
+    {% else %}
+    .divider { border-top: 1px solid #000; margin: 2mm 0; }
+    {% endif %}
+
+    .meta { font-size: 8pt; color: {{ muted_color }}; margin-bottom: 2mm; }
     .meta span { display: block; }
-    .items { width: 100%; margin-bottom: 6px; }
-    .items td { font-size: 8pt; padding: 2px 0; vertical-align: top; }
+
+    .items { width: 100%; border-collapse: collapse; margin-bottom: 2mm; }
+    .items td { font-size: {{ small_font_size }}; padding: 1mm 0; vertical-align: top; }
     .items td.price { text-align: right; white-space: nowrap; }
-    .items td.desc { max-width: 45mm; }
-    .totals { width: 100%; margin-bottom: 6px; }
-    .totals td { font-size: 8pt; padding: 2px 0; }
+    .items td.desc { max-width: {{ receipt_desc_width }}mm; }
+
+    .totals { width: 100%; margin-bottom: 2mm; }
+    .totals td { font-size: {{ small_font_size }}; padding: 1mm 0; }
     .totals td.val { text-align: right; }
-    .totals .grand td { font-size: 11pt; font-weight: bold; border-top: 1px solid #333; padding-top: 4px; }
-    .payment { font-size: 8pt; margin-bottom: 6px; }
-    .footer { text-align: center; font-size: 7pt; color: #888; margin-top: 10px; }
-    .loyalty { font-size: 7pt; color: #555; margin-bottom: 6px; text-align: center; }
-    .barcode { text-align: center; font-family: monospace; font-size: 10pt; letter-spacing: 2px; margin: 8px 0; }
+    .totals .grand td { font-size: 12pt; font-weight: bold; border-top: 1px dashed #000; padding-top: 2mm; }
+
+    .payment { font-size: 8pt; margin-bottom: 2mm; }
+    .loyalty { font-size: 7pt; color: {{ muted_color }}; margin-bottom: 2mm; text-align: center; }
+    .barcode { text-align: center; font-family: monospace; font-size: 10pt; letter-spacing: 2px; margin: 2mm 0; }
+    .footer { text-align: center; font-size: 7pt; color: {{ muted_color }}; margin-top: 3mm; }
 </style>
 </head>
 <body>
@@ -68,10 +88,12 @@
             <td class="val">-{{ currency_symbol }}{{ "%.2f"|format(discount) }}</td>
         </tr>
         {% endif %}
+        {% if tax_rate > 0 %}
         <tr>
             <td>Tax ({{ tax_rate }}%)</td>
             <td class="val">{{ currency_symbol }}{{ "%.2f"|format(tax) }}</td>
         </tr>
+        {% endif %}
         <tr class="grand">
             <td>TOTAL</td>
             <td class="val">{{ currency_symbol }}{{ "%.2f"|format(total) }}</td>
@@ -81,6 +103,7 @@
     <div class="payment">
         {{ payment_method }}{% if card_last_four %} ending {{ card_last_four }}{% endif %}<br>
         {% if auth_code %}Auth: {{ auth_code }}<br>{% endif %}
+        {% if card_expire %}Exp: {{ card_expire }}<br>{% endif %}
         {% if change_due %}Change: {{ currency_symbol }}{{ "%.2f"|format(change_due) }}{% endif %}
     </div>
 

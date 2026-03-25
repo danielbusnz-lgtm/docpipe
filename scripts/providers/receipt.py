@@ -162,4 +162,12 @@ class ReceiptProvider(BaseProvider):
             "return_policy": self.random_element(RETURN_POLICIES),
             "website": self.generator.url() if random.random() > 0.5 else None,
             **generate_style(),
+            # override body_font: receipts are mostly monospace
+            "body_font": random.choice([
+                "'Courier New', Courier, monospace",
+                "'Courier New', Courier, monospace",
+                "'Courier New', Courier, monospace",
+                "'Lucida Console', monospace",
+                "Arial, sans-serif",  # some modern POS systems
+            ]),
         }
