@@ -8,3 +8,5 @@ build/
 .pytest_cache/
 *.joblib
 cdk.out/
+PLAN.md
+CLAUDE.md
