@@ -7,7 +7,9 @@ requires-python = ">=3.13"
 dependencies = [
     "alembic>=1.18.4",
     "boto3>=1.42.75",
+    "faker>=40.11.1",
     "fastapi>=0.135.2",
+    "jinja2>=3.1.6",
     "joblib>=1.5.3",
     "mangum>=0.21.0",
     "matplotlib>=3.10.8",
@@ -22,4 +24,5 @@ dependencies = [
     "seaborn>=0.13.2",
     "sqlalchemy>=2.0.48",
     "uvicorn>=0.42.0",
+    "weasyprint>=68.1",
 ]
