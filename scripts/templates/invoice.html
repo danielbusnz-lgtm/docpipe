@@ -2,30 +2,40 @@
 <html>
 <head>
 <style>
-    @page { size: A4; margin: 2cm; }
-    body { font-family: {{ font }}; font-size: 10pt; color: #333; }
-    .header { display: flex; justify-content: space-between; margin-bottom: 30px; }
+    @page { size: A4; margin: {{ page_margin }}; }
+    body { font-family: {{ body_font }}; font-size: {{ body_font_size }}; color: {{ text_color }}; background: {{ bg_color }}; }
+    .header { display: flex; justify-content: space-between; margin-bottom: {{ section_gap }}; }
     .company-info { max-width: 60%; }
-    .company-name { font-size: 16pt; font-weight: bold; color: #1a1a2e; margin-bottom: 5px; }
-    .company-details { font-size: 8pt; color: #666; line-height: 1.4; }
-    .doc-title { font-size: 20pt; font-weight: bold; color: #1a1a2e; text-align: right; margin-bottom: 5px; }
-    .doc-meta { text-align: right; font-size: 9pt; color: #555; }
+    .company-name { font-size: {{ heading_font_size }}; font-weight: bold; color: {{ accent_color }}; margin-bottom: 5px; }
+    .company-details { font-size: {{ small_font_size }}; color: {{ muted_color }}; line-height: 1.4; }
+    .doc-title { font-size: 20pt; font-weight: bold; color: {{ accent_color }}; text-align: right; margin-bottom: 5px; }
+    .doc-meta { text-align: right; font-size: {{ small_font_size }}; color: {{ muted_color }}; }
     .doc-meta span { display: block; margin-bottom: 3px; }
-    .addresses { display: flex; justify-content: space-between; margin-bottom: 25px; }
+    .addresses { display: flex; justify-content: space-between; margin-bottom: {{ section_gap }}; }
     .address-block { width: 45%; }
-    .address-label { font-size: 8pt; font-weight: bold; color: #888; text-transform: uppercase; margin-bottom: 5px; }
-    .address-text { font-size: 9pt; line-height: 1.5; }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-    th { background-color: #1a1a2e; color: white; padding: 8px 10px; text-align: left; font-size: 9pt; }
+    .address-label { font-size: {{ small_font_size }}; font-weight: bold; color: {{ muted_color }}; text-transform: uppercase; margin-bottom: 5px; }
+    .address-text { font-size: {{ small_font_size }}; line-height: 1.5; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: {{ section_gap }}; border-radius: {{ border_radius }}; }
+    th { background-color: {{ table_header_bg }}; color: {{ table_header_text }}; padding: {{ cell_padding }}; text-align: left; font-size: {{ small_font_size }}; }
     th.amount { text-align: right; }
-    td { padding: 7px 10px; border-bottom: 1px solid #eee; font-size: 9pt; }
+    td { padding: {{ cell_padding }}; font-size: {{ small_font_size }}; }
     td.amount { text-align: right; }
-    .totals { width: 40%; margin-left: auto; }
+    {% if table_style == "bordered" %}
+    td { border: 1px solid {{ table_border_color }}; }
+    {% elif table_style == "zebra" %}
+    tr:nth-child(even) td { background-color: {{ table_stripe_color }}; }
+    td { border-bottom: 1px solid {{ table_border_color }}; }
+    {% elif table_style == "minimal" %}
+    td { border-bottom: 1px solid #eee; }
+    {% else %}
+    td { border: none; padding-top: 6px; padding-bottom: 6px; }
+    {% endif %}
+    .totals { width: {{ totals_width }}; margin-left: auto; }
     .totals td { border-bottom: 1px solid #ddd; }
-    .totals .total-row td { font-weight: bold; font-size: 11pt; border-top: 2px solid #1a1a2e; border-bottom: none; color: #1a1a2e; }
-    .footer { margin-top: 30px; font-size: 8pt; color: #888; border-top: 1px solid #ddd; padding-top: 10px; }
-    .terms { margin-top: 15px; font-size: 8pt; color: #555; }
-    .po-line { font-size: 9pt; color: #555; margin-bottom: 15px; }
+    .totals .total-row td { font-weight: bold; font-size: 11pt; border-top: 2px solid {{ accent_color }}; border-bottom: none; color: {{ accent_color }}; }
+    .footer { margin-top: 30px; font-size: {{ small_font_size }}; color: {{ muted_color }}; border-top: {{ header_border }}; padding-top: 10px; }
+    .terms { margin-top: 15px; font-size: {{ small_font_size }}; color: {{ muted_color }}; }
+    .po-line { font-size: {{ small_font_size }}; color: {{ muted_color }}; margin-bottom: 15px; }
 </style>
 </head>
 <body>
