@@ -1,4 +1,12 @@
-"""Generate example invoice PDFs and show extracted text."""
+"""Generate sample PDFs for each document type and extract their text.
+
+Build invoices, receipts, and contracts as formatted PDFs using
+Faker for field values and Jinja2 HTML templates. Then run pypdf
+text extraction on each to preview what the classifier will see.
+
+Usage:
+    uv run python scripts/generate_example.py
+"""
 
 import random
 from pathlib import Path
@@ -191,8 +199,8 @@ def generate_invoice_data(industry: str | None = None) -> dict:
             None,
         ]),
         "bank_name": fake.company() + " Bank" if (show_bank := random.random() > 0.5) else None,
-        "bank_account": fake.numerify("####-####-####") if show_bank else None,
-        "bank_routing": fake.numerify("#########") if show_bank else None,
+        "bank_account": fake.iban() if show_bank else None,
+        "bank_routing": fake.aba() if show_bank else None,
     }
 
 
@@ -379,9 +387,10 @@ def generate_receipt_data(store_type: str | None = None) -> dict:
     discount = round(random.uniform(1, 5), 2) if random.random() > 0.8 else None
     total = round(subtotal + tax - (discount or 0), 2)
 
-    payment_methods = ["Cash", "Visa", "Mastercard", "Amex", "Debit", "Apple Pay", "Google Pay"]
+    card_provider = fake.credit_card_provider()
+    payment_methods = ["Cash", card_provider, "Debit", "Apple Pay", "Google Pay"]
     method = random.choice(payment_methods)
-    is_card = method in ("Visa", "Mastercard", "Amex", "Debit")
+    is_card = method not in ("Cash", "Apple Pay", "Google Pay")
 
     return {
         "font": random.choice(["Courier New, monospace", "Arial, sans-serif", "Lucida Console, monospace"]),
@@ -409,8 +418,9 @@ def generate_receipt_data(store_type: str | None = None) -> dict:
         "total": total,
         "currency_symbol": "$",
         "payment_method": method,
-        "card_last_four": fake.numerify("####") if is_card else None,
+        "card_last_four": fake.credit_card_number()[-4:] if is_card else None,
         "auth_code": fake.numerify("######") if is_card else None,
+        "card_expire": fake.credit_card_expire() if is_card else None,
         "change_due": round(random.uniform(0.01, 20.00), 2) if method == "Cash" else None,
         "loyalty_points": random.randint(10, 500) if random.random() > 0.6 else None,
         "loyalty_balance": random.randint(1000, 9999) if random.random() > 0.6 else None,
