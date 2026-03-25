@@ -1,14 +1,11 @@
-"""Generate sample PDFs for each document type and extract their text.
-
-Build invoices, receipts, and contracts as formatted PDFs using
-Faker for field values and Jinja2 HTML templates. Then run pypdf
-text extraction on each to preview what the classifier will see.
+"""Preview PDFs and their extracted text for each document type.
 
 Usage:
     uv run python scripts/generate_example.py
 """
 
 import random
+from collections import OrderedDict
 from pathlib import Path
 
 from faker import Faker
@@ -16,9 +13,13 @@ from jinja2 import Environment, FileSystemLoader
 from pypdf import PdfReader
 from weasyprint import HTML
 
-fake = Faker()
-Faker.seed(42)
-random.seed(42)
+# Mix locales so we get varied address/phone formats, not just US
+fake = Faker(OrderedDict([
+    ("en_US", 3),
+    ("en_GB", 1),
+    ("en_AU", 1),
+    ("en_CA", 1),
+]))
 
 TEMPLATES_DIR = Path(__file__).parent / "templates"
 OUTPUT_DIR = Path(__file__).parent.parent / "classifier" / "sample_pdfs"
@@ -153,11 +154,11 @@ def generate_invoice_data(industry: str | None = None) -> dict:
 
     return {
         "font": random.choice(["Arial, sans-serif", "Georgia, serif", "Courier New, monospace", "Helvetica, sans-serif"]),
-        "vendor_name": fake.company(),
+        "vendor_name": fake.unique.company(),
         "vendor_address": fake.street_address(),
         "vendor_city": fake.city(),
         "vendor_state": fake.state_abbr(),
-        "vendor_zip": fake.zipcode(),
+        "vendor_zip": fake.postcode(),
         "vendor_phone": fake.phone_number(),
         "vendor_email": fake.company_email(),
         "vendor_tax_id": fake.ein() if random.random() > 0.3 else None,
@@ -176,12 +177,12 @@ def generate_invoice_data(industry: str | None = None) -> dict:
         "bill_to_address": fake.street_address(),
         "bill_to_city": fake.city(),
         "bill_to_state": fake.state_abbr(),
-        "bill_to_zip": fake.zipcode(),
+        "bill_to_zip": fake.postcode(),
         "ship_to_name": fake.name() if random.random() > 0.5 else None,
         "ship_to_address": fake.street_address(),
         "ship_to_city": fake.city(),
         "ship_to_state": fake.state_abbr(),
-        "ship_to_zip": fake.zipcode(),
+        "ship_to_zip": fake.postcode(),
         "line_items": line_items,
         "subtotal": subtotal,
         "tax_rate": tax_rate,
@@ -394,11 +395,11 @@ def generate_receipt_data(store_type: str | None = None) -> dict:
 
     return {
         "font": random.choice(["Courier New, monospace", "Arial, sans-serif", "Lucida Console, monospace"]),
-        "store_name": fake.company() if store_type != "gas_station" else fake.company() + " Gas & Mart",
+        "store_name": fake.unique.company() if store_type != "gas_station" else fake.unique.company() + " Gas & Mart",
         "store_address": fake.street_address(),
         "store_city": fake.city(),
         "store_state": fake.state_abbr(),
-        "store_zip": fake.zipcode(),
+        "store_zip": fake.postcode(),
         "store_phone": fake.phone_number(),
         "date_label": random.choice(["Date", "Transaction Date", "Sale Date"]),
         "transaction_date": fake.date_between(start_date="-90d", end_date="today").strftime(
@@ -495,21 +496,21 @@ def generate_contract_data(contract_type: str | None = None) -> dict:
         "effective_date": fake.date_between(start_date="-60d", end_date="+60d").strftime(
             random.choice(["%B %d, %Y", "%m/%d/%Y", "%d %B %Y"])
         ),
-        "party_a_name": fake.company(),
+        "party_a_name": fake.unique.company(),
         "party_a_entity_type": random.choice(["Delaware corporation", "New York LLC", "California corporation", "Texas limited partnership", "Florida LLC"]),
         "party_a_address": fake.street_address(),
         "party_a_city": fake.city(),
         "party_a_state": fake.state_abbr(),
-        "party_a_zip": fake.zipcode(),
+        "party_a_zip": fake.postcode(),
         "party_a_role": template["party_a_role"],
         "party_a_signatory": fake.name(),
         "party_a_title": random.choice(["CEO", "President", "Managing Director", "VP of Operations", "General Counsel"]),
-        "party_b_name": fake.company() if contract_type != "employment" else fake.name(),
+        "party_b_name": fake.unique.company() if contract_type != "employment" else fake.name(),
         "party_b_entity_type": random.choice(["LLC", "sole proprietorship", "corporation", None]) if contract_type != "employment" else None,
         "party_b_address": fake.street_address(),
         "party_b_city": fake.city(),
         "party_b_state": fake.state_abbr(),
-        "party_b_zip": fake.zipcode(),
+        "party_b_zip": fake.postcode(),
         "party_b_role": template["party_b_role"],
         "party_b_signatory": fake.name(),
         "party_b_title": random.choice(["Owner", "Principal", "Director", "Partner", "Manager"]) if contract_type != "employment" else None,
