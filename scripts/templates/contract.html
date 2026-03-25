@@ -2,21 +2,21 @@
 <html>
 <head>
 <style>
-    @page { size: A4; margin: 2.5cm; }
-    body { font-family: {{ font }}; font-size: 10pt; color: #222; line-height: 1.6; }
-    h1 { font-size: 16pt; text-align: center; text-transform: uppercase; margin-bottom: 20px; color: #111; }
-    .parties { margin-bottom: 20px; font-size: 9.5pt; }
-    .recitals { margin-bottom: 20px; }
+    @page { size: A4; margin: {{ page_margin }}; }
+    body { font-family: {{ body_font }}; font-size: {{ body_font_size }}; color: {{ text_color }}; line-height: 1.6; }
+    h1 { font-size: {{ heading_font_size }}; text-align: center; text-transform: uppercase; margin-bottom: {{ section_gap }}; color: {{ accent_color }}; }
+    .parties { margin-bottom: {{ section_gap }}; font-size: {{ body_font_size }}; }
+    .recitals { margin-bottom: {{ section_gap }}; }
     .recitals p { margin-bottom: 8px; }
     .section { margin-bottom: 15px; }
-    .section-title { font-weight: bold; font-size: 10.5pt; text-transform: uppercase; margin-bottom: 6px; }
+    .section-title { font-weight: bold; font-size: 10.5pt; text-transform: uppercase; margin-bottom: 6px; color: {{ accent_color }}; }
     .subsection { margin-left: 20px; margin-bottom: 8px; }
     .signature-block { margin-top: 40px; display: flex; justify-content: space-between; }
     .sig-party { width: 45%; }
-    .sig-line { border-top: 1px solid #333; margin-top: 40px; padding-top: 5px; font-size: 9pt; }
-    .sig-label { font-size: 8pt; color: #666; }
-    .footer { margin-top: 30px; font-size: 7pt; color: #999; text-align: center; border-top: 1px solid #ddd; padding-top: 8px; }
-    .exhibit-ref { font-style: italic; color: #555; }
+    .sig-line { border-top: 1px solid {{ text_color }}; margin-top: 40px; padding-top: 5px; font-size: {{ small_font_size }}; }
+    .sig-label { font-size: {{ small_font_size }}; color: {{ muted_color }}; }
+    .footer { margin-top: 30px; font-size: {{ small_font_size }}; color: {{ muted_color }}; text-align: center; border-top: {{ header_border }}; padding-top: 8px; }
+    .exhibit-ref { font-style: italic; color: {{ muted_color }}; }
 </style>
 </head>
 <body>
@@ -83,7 +83,7 @@
                 <strong>{{ party_b_name }}</strong><br>
                 <span class="sig-label">By: _________________________</span><br>
                 <span class="sig-label">Name: {{ party_b_signatory }}</span><br>
-                <span class="sig-label">Title: {{ party_b_title }}</span><br>
+                {% if party_b_title %}<span class="sig-label">Title: {{ party_b_title }}</span><br>{% endif %}
                 <span class="sig-label">Date: _________________________</span>
             </div>
         </div>
