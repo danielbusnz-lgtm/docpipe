@@ -14,3 +14,5 @@ mlartifacts/
 plan_classifier.md
 PLAN.md
 CLAUDE.md
+classifier/sample_pdfs/
+classifier/training_data.json
