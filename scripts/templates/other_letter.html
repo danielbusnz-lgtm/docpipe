@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+    @page { size: A4; margin: 2.5cm; }
+    body { font-family: {{ body_font }}; font-size: {{ body_font_size }}; color: {{ text_color }}; line-height: 1.6; }
+    .letterhead { margin-bottom: 30px; border-bottom: 1px solid {{ accent_color }}; padding-bottom: 10px; }
+    .company-name { font-size: {{ heading_font_size }}; font-weight: bold; color: {{ accent_color }}; }
+    .company-details { font-size: {{ small_font_size }}; color: {{ muted_color }}; }
+    .date { margin: 20px 0; }
+    .recipient { margin-bottom: 20px; }
+    .subject { font-weight: bold; margin-bottom: 15px; }
+    .body p { margin-bottom: 12px; }
+    .closing { margin-top: 30px; }
+    .signature-space { height: 50px; }
+    .cc { margin-top: 30px; font-size: {{ small_font_size }}; color: {{ muted_color }}; }
+</style>
+</head>
+<body>
+    <div class="letterhead">
+        <div class="company-name">{{ sender_company }}</div>
+        <div class="company-details">
+            {{ sender_address }}<br>
+            {{ sender_phone }} | {{ sender_email }}
+        </div>
+    </div>
+
+    <div class="date">{{ date }}</div>
+
+    <div class="recipient">
+        {{ recipient_name }}<br>
+        {{ recipient_title }}<br>
+        {{ recipient_company }}<br>
+        {{ recipient_address }}
+    </div>
+
+    <div class="subject">Re: {{ subject }}</div>
+
+    <div>{{ salutation }} {{ recipient_name }},</div>
+
+    <div class="body">
+        {% for para in paragraphs %}
+        <p>{{ para }}</p>
+        {% endfor %}
+    </div>
+
+    <div class="closing">
+        {{ closing }}<br>
+        <div class="signature-space"></div>
+        <strong>{{ sender_name }}</strong><br>
+        {{ sender_title }}<br>
+        {{ sender_company }}
+    </div>
+
+    {% if cc %}
+    <div class="cc">
+        CC: {{ cc | join(", ") }}
+    </div>
+    {% endif %}
+</body>
+</html>

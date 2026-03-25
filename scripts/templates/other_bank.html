@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+    @page { size: A4; margin: {{ page_margin }}; }
+    body { font-family: {{ body_font }}; font-size: {{ body_font_size }}; color: {{ text_color }}; }
+    .header { display: flex; justify-content: space-between; margin-bottom: {{ section_gap }}; border-bottom: 2px solid {{ accent_color }}; padding-bottom: 10px; }
+    .bank-name { font-size: {{ heading_font_size }}; font-weight: bold; color: {{ accent_color }}; }
+    .account-info { font-size: {{ small_font_size }}; color: {{ muted_color }}; text-align: right; }
+    .account-info div { margin-bottom: 2px; }
+    .summary { margin: {{ section_gap }} 0; }
+    .summary td { padding: 4px 12px; }
+    table.transactions { width: 100%; border-collapse: collapse; margin-top: {{ section_gap }}; }
+    table.transactions th { background: {{ table_header_bg }}; color: {{ table_header_text }}; padding: {{ cell_padding }}; text-align: left; font-size: {{ small_font_size }}; }
+    table.transactions td { padding: {{ cell_padding }}; font-size: {{ small_font_size }}; border-bottom: 1px solid #eee; }
+    td.amount { text-align: right; }
+    .footer { margin-top: {{ section_gap }}; font-size: {{ small_font_size }}; color: {{ muted_color }}; text-align: center; }
+</style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <div class="bank-name">{{ bank_name }}</div>
+            <div style="font-size: {{ small_font_size }}; color: {{ muted_color }};">{{ branch_address }}</div>
+        </div>
+        <div class="account-info">
+            <div><strong>{{ customer_name }}</strong></div>
+            <div>{{ customer_address }}</div>
+            <div>Account: {{ account_number }} ({{ account_type }})</div>
+            <div>Period: {{ statement_period }}</div>
+        </div>
+    </div>
+
+    <div class="summary">
+        <table>
+            <tr><td>Opening Balance</td><td class="amount">${{ opening_balance }}</td></tr>
+            <tr><td><strong>Closing Balance</strong></td><td class="amount"><strong>${{ closing_balance }}</strong></td></tr>
+        </table>
+    </div>
+
+    <table class="transactions">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Description</th>
+                <th class="amount">Debit</th>
+                <th class="amount">Credit</th>
+                <th class="amount">Balance</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for txn in transactions %}
+            <tr>
+                <td>{{ txn.date }}</td>
+                <td>{{ txn.description }}</td>
+                <td class="amount">{% if txn.debit %}${{ txn.debit }}{% endif %}</td>
+                <td class="amount">{% if txn.credit %}${{ txn.credit }}{% endif %}</td>
+                <td class="amount">${{ txn.balance }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="footer">
+        {{ bank_name }} | FDIC Insured | Customer Service: 1-800-{{ "%.0f"|format(range(100,999)|random) }}-{{ "%.0f"|format(range(1000,9999)|random) }}
+    </div>
+</body>
+</html>

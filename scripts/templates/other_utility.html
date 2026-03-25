@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+    @page { size: A4; margin: {{ page_margin }}; }
+    body { font-family: {{ body_font }}; font-size: {{ body_font_size }}; color: {{ text_color }}; }
+    .header { display: flex; justify-content: space-between; margin-bottom: {{ section_gap }}; }
+    .company { font-size: {{ heading_font_size }}; font-weight: bold; color: {{ accent_color }}; }
+    .label { font-size: {{ small_font_size }}; color: {{ muted_color }}; font-weight: bold; }
+    .summary { margin: {{ section_gap }} 0; }
+    .summary td { padding: 4px 12px; font-size: {{ body_font_size }}; }
+    .total-row td { font-weight: bold; font-size: 12pt; border-top: 2px solid {{ accent_color }}; color: {{ accent_color }}; }
+    .footer { margin-top: {{ section_gap }}; font-size: {{ small_font_size }}; color: {{ muted_color }}; border-top: 1px solid #ddd; padding-top: 8px; }
+</style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <div class="company">{{ utility_company }}</div>
+            <div class="label">Account: {{ account_number }}</div>
+            <div class="label">Meter: {{ meter_number }}</div>
+        </div>
+        <div style="text-align: right;">
+            <div class="label">Statement Date: {{ statement_date }}</div>
+            <div class="label">Billing Period: {{ billing_period }}</div>
+            <div class="label">Due Date: {{ due_date }}</div>
+        </div>
+    </div>
+
+    <div>
+        <div class="label">Service Address</div>
+        <div>{{ customer_name }}<br>{{ service_address }}</div>
+    </div>
+
+    <div class="summary">
+        <table>
+            {% if prev_balance > 0 %}
+            <tr><td>Previous Balance</td><td>${{ "%.2f"|format(prev_balance) }}</td></tr>
+            {% if payments > 0 %}
+            <tr><td>Payments Received</td><td>-${{ "%.2f"|format(payments) }}</td></tr>
+            {% endif %}
+            {% endif %}
+            <tr><td>{{ utility_type }} Usage: {{ usage }} {{ unit }} @ ${{ rate }}/{{ unit }}</td><td>${{ "%.2f"|format(current_charges) }}</td></tr>
+            <tr><td>Fees and Surcharges</td><td>${{ "%.2f"|format(fees) }}</td></tr>
+            <tr class="total-row"><td>AMOUNT DUE</td><td>${{ "%.2f"|format(total) }}</td></tr>
+        </table>
+    </div>
+
+    <div class="footer">
+        {{ utility_company }} | {{ account_number }} | Pay by {{ due_date }} to avoid late fees
+    </div>
+</body>
+</html>
