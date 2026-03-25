@@ -1,15 +1,8 @@
-"""DynamoDB CRUD operations for document metadata.
+"""DynamoDB CRUD for document metadata and processing status.
 
-Handle the lifecycle tracking of documents as they move through the
-processing pipeline. DynamoDB stores metadata and status, while
-Postgres stores the actual extracted data.
-
-Typical usage example:
-
-    client = boto3.resource("dynamodb")
-    table = client.Table("inkvault-metadata")
-    put_document(table, document_id="abc-123", filename="invoice.pdf", s3_key="docs/invoice.pdf")
-    update_status(table, document_id="abc-123", status="completed")
+Status tracking lives here instead of Postgres because Lambda
+updates it 5+ times per document and DynamoDB handles that better
+without connection pooling overhead.
 """
 
 import logging
@@ -27,17 +20,7 @@ def put_document(
     filename: str,
     s3_key: str,
 ) -> dict:
-    """Create a new document metadata record.
-
-    Args:
-        table: A boto3 DynamoDB Table resource.
-        document_id: Unique identifier for the document.
-        filename: Original name of the uploaded file.
-        s3_key: Object key in the S3 bucket.
-
-    Returns:
-        The item that was written to DynamoDB.
-    """
+    """Create a new record with status 'uploaded'. Returns the item dict."""
     now = datetime.now(timezone.utc).isoformat()
     item = {
         "document_id": document_id,
@@ -53,15 +36,7 @@ def put_document(
 
 
 def get_document(table, document_id: str) -> Optional[dict]:
-    """Fetch a document metadata record by ID.
-
-    Args:
-        table: A boto3 DynamoDB Table resource.
-        document_id: Unique identifier for the document.
-
-    Returns:
-        The document metadata dict, or None if not found.
-    """
+    """Return the metadata dict for a document, or None if missing."""
     response = table.get_item(Key={"document_id": document_id})
     return response.get("Item")
 
@@ -74,15 +49,9 @@ def update_status(
     classification_confidence: Optional[float] = None,
     error_message: Optional[str] = None,
 ) -> None:
-    """Update a document's processing status and optional fields.
+    """Move a document to a new status. Optionally set doc_type, confidence, or error.
 
-    Args:
-        table: A boto3 DynamoDB Table resource.
-        document_id: Unique identifier for the document.
-        status: New processing status.
-        doc_type: Classified document type, if determined.
-        classification_confidence: Classifier confidence score.
-        error_message: Error details if processing failed.
+    Uses #s alias for 'status' because it's a DynamoDB reserved word.
     """
     now = datetime.now(timezone.utc).isoformat()
 
@@ -116,18 +85,7 @@ def query_by_status(
     status: str,
     limit: int = 20,
 ) -> list[dict]:
-    """List documents filtered by processing status.
-
-    Uses the status-created_at-index GSI for efficient queries.
-
-    Args:
-        table: A boto3 DynamoDB Table resource.
-        status: Processing status to filter by.
-        limit: Maximum number of results to return.
-
-    Returns:
-        List of document metadata dicts, sorted by created_at descending.
-    """
+    """Query the GSI for documents with a given status, newest first."""
     response = table.query(
         IndexName="status-created_at-index",
         KeyConditionExpression=Key("status").eq(status),
@@ -138,11 +96,7 @@ def query_by_status(
 
 
 def delete_document(table, document_id: str) -> None:
-    """Delete a document metadata record.
-
-    Args:
-        table: A boto3 DynamoDB Table resource.
-        document_id: Unique identifier for the document.
+    """Remove a document metadata record.
     """
     table.delete_item(Key={"document_id": document_id})
     logger.info("Deleted document record: %s", document_id)
