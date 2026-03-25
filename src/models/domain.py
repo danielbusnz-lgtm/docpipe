@@ -25,6 +25,7 @@ class DocumentType(str, Enum):
     INVOICE = "invoice"
     RECEIPT = "receipt"
     CONTRACT = "contract"
+    OTHER = "other"
     UNKNOWN = "unknown"
 
 
