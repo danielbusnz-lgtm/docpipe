@@ -35,14 +35,14 @@
     <div class="summary">
         <table>
             {% if prev_balance > 0 %}
-            <tr><td>Previous Balance</td><td>${{ "%.2f"|format(prev_balance) }}</td></tr>
+            <tr><td>Previous Balance</td><td>${{ "{:,.2f}".format(prev_balance) }}</td></tr>
             {% if payments > 0 %}
-            <tr><td>Payments Received</td><td>-${{ "%.2f"|format(payments) }}</td></tr>
+            <tr><td>Payments Received</td><td>-${{ "{:,.2f}".format(payments) }}</td></tr>
             {% endif %}
             {% endif %}
-            <tr><td>{{ utility_type }} Usage: {{ usage }} {{ unit }} @ ${{ rate }}/{{ unit }}</td><td>${{ "%.2f"|format(current_charges) }}</td></tr>
-            <tr><td>Fees and Surcharges</td><td>${{ "%.2f"|format(fees) }}</td></tr>
-            <tr class="total-row"><td>AMOUNT DUE</td><td>${{ "%.2f"|format(total) }}</td></tr>
+            <tr><td>{{ utility_type }} Usage: {{ usage }} {{ unit }} @ ${{ rate }}/{{ unit }}</td><td>${{ "{:,.2f}".format(current_charges) }}</td></tr>
+            <tr><td>Fees and Surcharges</td><td>${{ "{:,.2f}".format(fees) }}</td></tr>
+            <tr class="total-row"><td>AMOUNT DUE</td><td>${{ "{:,.2f}".format(total) }}</td></tr>
         </table>
     </div>
 

@@ -109,8 +109,8 @@
                     <tr>
                         <td>{{ item.description }}</td>
                         <td>{{ item.quantity }}</td>
-                        <td class="amount">{{ currency_symbol }}{{ "%.2f"|format(item.unit_price) }}</td>
-                        <td class="amount">{{ currency_symbol }}{{ "%.2f"|format(item.amount) }}</td>
+                        <td class="amount">{{ currency_symbol }}{{ "{:,.2f}".format(item.unit_price) }}</td>
+                        <td class="amount">{{ currency_symbol }}{{ "{:,.2f}".format(item.amount) }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -121,27 +121,27 @@
             <table class="totals-table">
                 <tr>
                     <td>{{ subtotal_label }}</td>
-                    <td class="amount">{{ currency_symbol }}{{ "%.2f"|format(subtotal) }}</td>
+                    <td class="amount">{{ currency_symbol }}{{ "{:,.2f}".format(subtotal) }}</td>
                 </tr>
                 {% if discount %}
                 <tr>
                     <td>Discount ({{ discount_pct }}%)</td>
-                    <td class="amount">-{{ currency_symbol }}{{ "%.2f"|format(discount) }}</td>
+                    <td class="amount">-{{ currency_symbol }}{{ "{:,.2f}".format(discount) }}</td>
                 </tr>
                 {% endif %}
                 {% if shipping %}
                 <tr>
                     <td>Shipping</td>
-                    <td class="amount">{{ currency_symbol }}{{ "%.2f"|format(shipping) }}</td>
+                    <td class="amount">{{ currency_symbol }}{{ "{:,.2f}".format(shipping) }}</td>
                 </tr>
                 {% endif %}
                 <tr>
                     <td>Tax ({{ tax_rate }}%)</td>
-                    <td class="amount">{{ currency_symbol }}{{ "%.2f"|format(tax) }}</td>
+                    <td class="amount">{{ currency_symbol }}{{ "{:,.2f}".format(tax) }}</td>
                 </tr>
                 <tr class="total-row">
                     <td>{{ total_label }}</td>
-                    <td class="amount">{{ currency_symbol }}{{ "%.2f"|format(total) }}</td>
+                    <td class="amount">{{ currency_symbol }}{{ "{:,.2f}".format(total) }}</td>
                 </tr>
             </table>
         </div>

@@ -70,7 +70,7 @@
         {% for item in line_items %}
         <tr>
             <td class="desc">{{ item.description }}{% if item.quantity > 1 %} x{{ item.quantity }}{% endif %}</td>
-            <td class="price">{{ currency_symbol }}{{ "%.2f"|format(item.amount) }}</td>
+            <td class="price">{{ currency_symbol }}{{ "{:,.2f}".format(item.amount) }}</td>
         </tr>
         {% endfor %}
     </table>
@@ -80,23 +80,23 @@
     <table class="totals">
         <tr>
             <td>{{ subtotal_label }}</td>
-            <td class="val">{{ currency_symbol }}{{ "%.2f"|format(subtotal) }}</td>
+            <td class="val">{{ currency_symbol }}{{ "{:,.2f}".format(subtotal) }}</td>
         </tr>
         {% if discount %}
         <tr>
             <td>Discount{% if discount_desc %} ({{ discount_desc }}){% endif %}</td>
-            <td class="val">-{{ currency_symbol }}{{ "%.2f"|format(discount) }}</td>
+            <td class="val">-{{ currency_symbol }}{{ "{:,.2f}".format(discount) }}</td>
         </tr>
         {% endif %}
         {% if tax_rate > 0 %}
         <tr>
             <td>Tax ({{ tax_rate }}%)</td>
-            <td class="val">{{ currency_symbol }}{{ "%.2f"|format(tax) }}</td>
+            <td class="val">{{ currency_symbol }}{{ "{:,.2f}".format(tax) }}</td>
         </tr>
         {% endif %}
         <tr class="grand">
             <td>{{ total_label }}</td>
-            <td class="val">{{ currency_symbol }}{{ "%.2f"|format(total) }}</td>
+            <td class="val">{{ currency_symbol }}{{ "{:,.2f}".format(total) }}</td>
         </tr>
     </table>
 
@@ -104,7 +104,7 @@
         {{ payment_method }}{% if card_last_four %} ending {{ card_last_four }}{% endif %}<br>
         {% if auth_code %}Auth: {{ auth_code }}<br>{% endif %}
         {% if card_expire %}Exp: {{ card_expire }}<br>{% endif %}
-        {% if change_due %}Change: {{ currency_symbol }}{{ "%.2f"|format(change_due) }}{% endif %}
+        {% if change_due %}Change: {{ currency_symbol }}{{ "{:,.2f}".format(change_due) }}{% endif %}
     </div>
 
     {% if loyalty_points %}
