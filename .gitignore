@@ -12,6 +12,7 @@ mlruns/
 mlruns.db
 mlartifacts/
 plan_classifier.md
+mlflow_plan.md
 PLAN.md
 CLAUDE.md
 classifier/sample_pdfs/
