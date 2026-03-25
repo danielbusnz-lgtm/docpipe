@@ -5,15 +5,18 @@ description = "AI-powered document processing pipeline on AWS"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "alembic>=1.18.4",
     "boto3>=1.42.75",
     "fastapi>=0.135.2",
     "joblib>=1.5.3",
     "mangum>=0.21.0",
     "numpy>=2.4.3",
     "pandas>=3.0.1",
+    "psycopg2-binary>=2.9.11",
     "pydantic>=2.12.5",
     "pypdf>=6.9.2",
     "python-multipart>=0.0.22",
     "scikit-learn>=1.8.0",
+    "sqlalchemy>=2.0.48",
     "uvicorn>=0.42.0",
 ]
