@@ -1,6 +1,5 @@
 """Faker provider for generating realistic contract data."""
 
-import random
 
 from faker.providers import BaseProvider
 

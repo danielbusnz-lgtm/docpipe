@@ -27,14 +27,12 @@ import matplotlib.pyplot as plt
 import mlflow
 import numpy as np
 import seaborn as sns
-from sklearn.calibration import CalibrationDisplay
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
     accuracy_score,
     brier_score_loss,
     classification_report,
-    ConfusionMatrixDisplay,
     f1_score,
     log_loss,
     roc_auc_score,
@@ -69,7 +67,7 @@ def load_data(path: Path) -> tuple[list[str], list[str]]:
         f"unexpected labels: {set(labels)}"
     )
 
-    counts = {l: labels.count(l) for l in sorted(set(labels))}
+    counts = {lb: labels.count(lb) for lb in sorted(set(labels))}
     logger.info("Loaded %d samples: %s", len(texts), counts)
     return texts, labels
 
@@ -453,7 +451,7 @@ def main():
 
     texts, labels = load_data(args.data_path)
     classes = sorted(set(labels))
-    label_counts = {l: labels.count(l) for l in classes}
+    label_counts = {lb: labels.count(lb) for lb in classes}
 
     # MLflow setup
     os.environ.setdefault("MLFLOW_TRACKING_URI", f"sqlite:///{Path.cwd() / 'mlruns.db'}")

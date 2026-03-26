@@ -1,6 +1,5 @@
 """Test the Faker data providers produce valid, complete data."""
 
-import re
 
 import pytest
 
