@@ -4,7 +4,11 @@ Document processing pipeline that classifies PDFs, extracts structured data with
 
 ## Architecture
 
-![Architecture Diagram](diagrams/architecture.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="diagrams/architecture-dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="diagrams/architecture-light.png">
+  <img alt="Architecture Diagram" src="diagrams/architecture-light.png">
+</picture>
 
 **Upload flow**: Client uploads PDF via API. S3 stores the raw file, DynamoDB tracks status, and a background task (or S3 trigger Lambda) runs the processing pipeline.
 
