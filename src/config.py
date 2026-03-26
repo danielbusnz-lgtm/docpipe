@@ -13,7 +13,7 @@ class Settings:
     )
     bedrock_model_id: str = os.getenv(
         "INKVAULT_BEDROCK_MODEL",
-        "anthropic.claude-sonnet-4-20250514",
+        "anthropic.claude-sonnet-4-20250514-v1:0",
     )
     s3_endpoint_url: str | None = os.getenv("INKVAULT_S3_ENDPOINT", None)
     dynamo_endpoint_url: str | None = os.getenv("INKVAULT_DYNAMO_ENDPOINT", None)
