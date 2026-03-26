@@ -193,3 +193,231 @@ def compute_metrics(y_true, y_pred, y_proba, classes) -> dict:
         metrics[f"{cls}_brier"] = round(brier_score_loss(y_cls, y_proba[:, i]), 4)
 
     return metrics
+
+
+# --- Plot styling ---
+
+CB_COLORS = ["#377eb8", "#ff7f00", "#4daf4a", "#984ea3"]
+
+def _apply_style():
+    """Set up professional plot defaults."""
+    try:
+        plt.style.use(["science", "no-latex"])
+    except OSError:
+        pass  # scienceplots not installed, use defaults
+    plt.rcParams.update({
+        "figure.dpi": 150,
+        "figure.facecolor": "white",
+        "font.size": 12,
+        "axes.titlesize": 14,
+        "axes.titleweight": "bold",
+        "axes.labelsize": 13,
+        "axes.spines.top": False,
+        "axes.spines.right": False,
+        "axes.grid": True,
+        "axes.axisbelow": True,
+        "grid.color": "#E0E0E0",
+        "grid.alpha": 0.7,
+        "legend.fontsize": 10,
+        "legend.framealpha": 0.9,
+        "savefig.dpi": 300,
+        "savefig.bbox": "tight",
+    })
+
+
+# --- Individual plot functions ---
+
+def _plot_confusion_matrix(y_true, y_pred, classes, path: Path):
+    """Row-normalized confusion matrix with raw counts annotated."""
+    from sklearn.metrics import confusion_matrix as cm_func
+
+    cm_raw = cm_func(y_true, y_pred, labels=classes)
+    cm_norm = cm_raw.astype(float) / cm_raw.sum(axis=1)[:, np.newaxis]
+
+    # build dual annotations: percentage on top, count below
+    annot = np.empty_like(cm_raw, dtype=object)
+    for i in range(len(classes)):
+        for j in range(len(classes)):
+            annot[i, j] = f"{cm_norm[i, j]:.1%}\nn={cm_raw[i, j]}"
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+    sns.heatmap(
+        cm_norm, annot=annot, fmt="", cmap="Blues",
+        vmin=0, vmax=1, linewidths=0.5, linecolor="white",
+        xticklabels=classes, yticklabels=classes,
+        cbar_kws={"label": "Recall", "shrink": 0.8},
+        annot_kws={"size": 11}, ax=ax,
+    )
+    ax.set_xlabel("Predicted")
+    ax.set_ylabel("True")
+    ax.set_title("Confusion Matrix (Out-of-Fold)")
+    ax.set_yticklabels(ax.get_yticklabels(), rotation=0)
+    fig.tight_layout()
+    fig.savefig(path)
+    plt.close(fig)
+
+
+def _plot_confidence_histogram(y_true, y_pred, y_proba, classes, path: Path):
+    """Confidence split by correct vs incorrect predictions."""
+    max_conf = y_proba.max(axis=1)
+    correct = (y_pred == y_true)
+    bins = np.linspace(0, 1, 21)  # fixed 0.05 bins
+
+    fig, axes = plt.subplots(2, 3, figsize=(15, 9))
+    axes = axes.flatten()
+
+    def _one(ax, confs, mask, title):
+        ax.hist(confs[mask], bins=bins, alpha=0.6, color="#377eb8",
+                label="Correct", edgecolor="white", linewidth=0.4)
+        ax.hist(confs[~mask], bins=bins, alpha=0.6, color="#e41a1c",
+                label="Incorrect", edgecolor="white", linewidth=0.4)
+        ax.axvline(CONFIDENCE_THRESHOLD, color="gray", linestyle="--", linewidth=1.5)
+        acc = mask.mean()
+        ax.set_title(f"{title}  (acc={acc:.2%}, n={len(confs)})")
+        ax.set_xlabel("Confidence")
+        ax.set_ylabel("Count")
+        ax.legend(fontsize=8)
+        ax.set_xlim(0, 1)
+
+    # overall
+    _one(axes[0], max_conf, correct, "Overall")
+
+    # per class (by true label)
+    for i, cls in enumerate(classes):
+        mask = (y_true == cls)
+        _one(axes[i + 1], max_conf[mask], correct[mask], f"True: {cls}")
+
+    axes[5].set_visible(False)  # hide unused subplot
+
+    fig.suptitle("Confidence Distribution: Correct vs Incorrect", fontsize=14, fontweight="bold")
+    fig.tight_layout()
+    fig.savefig(path)
+    plt.close(fig)
+
+
+def _expected_calibration_error(y_true_bin, y_prob, n_bins=10):
+    """ECE: weighted average of |accuracy - confidence| per bin."""
+    bin_edges = np.linspace(0, 1, n_bins + 1)
+    ece = 0.0
+    for lo, hi in zip(bin_edges[:-1], bin_edges[1:]):
+        mask = (y_prob >= lo) & (y_prob < hi)
+        if mask.sum() == 0:
+            continue
+        bin_acc = y_true_bin[mask].mean()
+        bin_conf = y_prob[mask].mean()
+        ece += (mask.sum() / len(y_prob)) * abs(bin_acc - bin_conf)
+    return ece
+
+
+def _plot_calibration_curves(y_true, y_proba, classes, path: Path):
+    """Per-class calibration with ECE and confidence histogram inset."""
+    from sklearn.calibration import calibration_curve
+
+    fig, axes = plt.subplots(2, 2, figsize=(10, 9))
+
+    for i, (cls, ax) in enumerate(zip(classes, axes.flatten())):
+        y_bin = (y_true == cls).astype(int)
+        prob_true, prob_pred = calibration_curve(
+            y_bin, y_proba[:, i], n_bins=10, strategy="uniform"
+        )
+        ece = _expected_calibration_error(y_bin, y_proba[:, i])
+
+        ax.plot([0, 1], [0, 1], "--", color="#999999", linewidth=1.2, label="Perfect")
+        ax.plot(prob_pred, prob_true, "o-", color=CB_COLORS[i], linewidth=2,
+                markersize=5, label=f"Model (ECE={ece:.3f})")
+        ax.fill_between(prob_pred, prob_pred, prob_true, alpha=0.15, color=CB_COLORS[i])
+        ax.set_xlim(0, 1)
+        ax.set_ylim(0, 1)
+        ax.set_xlabel("Mean Predicted Confidence")
+        ax.set_ylabel("Fraction Positive")
+        ax.set_title(f"Calibration: {cls}")
+        ax.legend(fontsize=9)
+
+        # inset: where the confidence scores actually fall
+        ax2 = ax.inset_axes([0.05, 0.05, 0.9, 0.12])
+        ax2.hist(y_proba[:, i], bins=20, color=CB_COLORS[i], alpha=0.4, edgecolor="none")
+        ax2.set_xlim(0, 1)
+        ax2.axis("off")
+
+    fig.suptitle("Calibration Curves (One-vs-Rest)", fontsize=14, fontweight="bold")
+    fig.tight_layout()
+    fig.savefig(path)
+    plt.close(fig)
+
+
+def _plot_roc_curves(y_true, y_proba, classes, path: Path):
+    """Per-class ROC curves with AUC, following sklearn's OvR pattern."""
+    from sklearn.metrics import RocCurveDisplay
+
+    y_bin = label_binarize(y_true, classes=classes)
+    fig, ax = plt.subplots(figsize=(8, 7))
+
+    for i, cls in enumerate(classes):
+        RocCurveDisplay.from_predictions(
+            y_bin[:, i], y_proba[:, i],
+            name=f"{cls}",
+            color=CB_COLORS[i],
+            ax=ax,
+            plot_chance_level=(i == 0),
+        )
+
+    ax.set_title("ROC Curves (One-vs-Rest)")
+    ax.legend(loc="lower right")
+    fig.tight_layout()
+    fig.savefig(path)
+    plt.close(fig)
+
+
+def _plot_pr_curves(y_true, y_proba, classes, path: Path):
+    """Per-class Precision-Recall curves with average precision."""
+    from sklearn.metrics import precision_recall_curve, average_precision_score, PrecisionRecallDisplay
+
+    y_bin = label_binarize(y_true, classes=classes)
+    fig, ax = plt.subplots(figsize=(8, 7))
+
+    for i, cls in enumerate(classes):
+        precision, recall, _ = precision_recall_curve(y_bin[:, i], y_proba[:, i])
+        ap = average_precision_score(y_bin[:, i], y_proba[:, i])
+
+        PrecisionRecallDisplay(
+            precision=precision, recall=recall, average_precision=ap,
+        ).plot(ax=ax, name=f"{cls} (AP={ap:.2f})", color=CB_COLORS[i])
+
+    ax.set_title("Precision-Recall Curves (One-vs-Rest)")
+    ax.legend(loc="lower left")
+    fig.tight_layout()
+    fig.savefig(path)
+    plt.close(fig)
+
+
+def _plot_report_heatmap(y_true, y_pred, classes, path: Path):
+    """Classification report as a colored heatmap."""
+    import pandas as pd
+
+    report = classification_report(y_true, y_pred, target_names=classes, output_dict=True)
+    rows = {cls: report[cls] for cls in classes}
+    df = pd.DataFrame(rows).T[["precision", "recall", "f1-score"]]
+
+    fig, ax = plt.subplots(figsize=(7, 4))
+    sns.heatmap(
+        df, annot=True, fmt=".3f", cmap="YlGnBu",
+        vmin=0.5, vmax=1.0, linewidths=0.5, linecolor="white",
+        cbar_kws={"label": "Score", "shrink": 0.8},
+        annot_kws={"size": 13, "fontweight": "bold"}, ax=ax,
+    )
+    ax.set_title("Classification Report")
+    ax.set_yticklabels(ax.get_yticklabels(), rotation=0)
+    fig.tight_layout()
+    fig.savefig(path)
+    plt.close(fig)
+
+
+def save_plots(y_true, y_pred, y_proba, classes, tmpdir: Path):
+    """Generate all 6 evaluation plots."""
+    _apply_style()
+    _plot_confusion_matrix(y_true, y_pred, classes, tmpdir / "confusion_matrix.png")
+    _plot_confidence_histogram(y_true, y_pred, y_proba, classes, tmpdir / "confidence_histogram.png")
+    _plot_calibration_curves(y_true, y_proba, classes, tmpdir / "calibration_curves.png")
+    _plot_roc_curves(y_true, y_proba, classes, tmpdir / "roc_curves.png")
+    _plot_pr_curves(y_true, y_proba, classes, tmpdir / "pr_curves.png")
+    _plot_report_heatmap(y_true, y_pred, classes, tmpdir / "classification_report.png")
