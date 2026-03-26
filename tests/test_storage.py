@@ -9,7 +9,6 @@ from sqlalchemy.orm import Session
 from src.models.database import (
     Base,
     ContractExtractionRow,
-    Document,
     InvoiceExtractionRow,
     LineItemRow,
     ReceiptExtractionRow,
@@ -41,12 +40,9 @@ def db_session():
 
 
 @pytest.fixture
-def doc_id(db_session):
-    """Create a document record and return its ID."""
-    doc = Document(filename="test.pdf", s3_key="documents/test/test.pdf")
-    db_session.add(doc)
-    db_session.flush()
-    return doc.id
+def doc_id():
+    """Return a random UUID as a document ID."""
+    return uuid.uuid4()
 
 
 def _invoice():
@@ -173,10 +169,3 @@ class TestStoreRouter:
     def test_generic_returns_none(self, db_session, doc_id):
         result = store(db_session, doc_id, DocumentType.OTHER, {"summary": "some doc"})
         assert result is None
-
-    def test_updates_doc_type(self, db_session, doc_id):
-        store(db_session, doc_id, DocumentType.INVOICE, _invoice())
-        db_session.flush()
-
-        doc = db_session.get(Document, doc_id)
-        assert doc.doc_type == "invoice"

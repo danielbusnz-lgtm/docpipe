@@ -1,10 +1,10 @@
-"""Test the Bedrock extractor with mock clients."""
+"""Test the extractor with mock Anthropic client."""
 
 import json
 from unittest.mock import MagicMock
 
 import pytest
-from botocore.exceptions import ClientError
+from anthropic import APIError
 
 from src.models.domain import (
     ContractExtraction,
@@ -14,25 +14,19 @@ from src.models.domain import (
 )
 from src.services.extractor import (
     ExtractionError,
-    _build_output_config,
-    _parse_response,
     _truncate_text,
     extract,
 )
 
 
-def _mock_response(data: dict) -> dict:
-    """Build a fake Converse API response."""
-    return {
-        "output": {
-            "message": {
-                "role": "assistant",
-                "content": [{"text": json.dumps(data)}],
-            }
-        },
-        "usage": {"inputTokens": 150, "outputTokens": 80},
-        "stopReason": "end_turn",
-    }
+def _mock_response(data: dict):
+    """Build a fake Anthropic messages.create() response."""
+    response = MagicMock()
+    content_block = MagicMock()
+    content_block.text = json.dumps(data)
+    response.content = [content_block]
+    response.usage = MagicMock(input_tokens=150, output_tokens=80)
+    return response
 
 
 SAMPLE_INVOICE = {
@@ -82,59 +76,10 @@ class TestTruncateText:
         assert len(_truncate_text(text, max_chars=100)) == 100
 
 
-class TestBuildOutputConfig:
-    def test_invoice_schema(self):
-        config = _build_output_config(InvoiceExtraction)
-        assert config["textFormat"]["type"] == "json_schema"
-        schema_str = config["textFormat"]["structure"]["jsonSchema"]["schema"]
-        schema = json.loads(schema_str)
-        assert "properties" in schema
-        assert "vendor_name" in schema["properties"]
-
-    def test_receipt_schema(self):
-        config = _build_output_config(ReceiptExtraction)
-        name = config["textFormat"]["structure"]["jsonSchema"]["name"]
-        assert name == "ReceiptExtraction"
-
-    def test_contract_schema(self):
-        config = _build_output_config(ContractExtraction)
-        schema_str = config["textFormat"]["structure"]["jsonSchema"]["schema"]
-        schema = json.loads(schema_str)
-        assert "parties" in schema["properties"]
-
-
-class TestParseResponse:
-    def test_parse_invoice(self):
-        response = _mock_response(SAMPLE_INVOICE)
-        result = _parse_response(response, InvoiceExtraction)
-        assert isinstance(result, InvoiceExtraction)
-        assert result.vendor_name == "Acme Corp"
-        assert result.total_amount == 270.0
-        assert len(result.line_items) == 1
-
-    def test_parse_receipt(self):
-        response = _mock_response(SAMPLE_RECEIPT)
-        result = _parse_response(response, ReceiptExtraction)
-        assert isinstance(result, ReceiptExtraction)
-        assert result.payment_method == "Visa ending 4242"
-
-    def test_parse_contract(self):
-        response = _mock_response(SAMPLE_CONTRACT)
-        result = _parse_response(response, ContractExtraction)
-        assert isinstance(result, ContractExtraction)
-        assert len(result.parties) == 2
-
-    def test_parse_generic(self):
-        response = _mock_response({"summary": "a letter", "entities": ["John"]})
-        result = _parse_response(response, None)
-        assert isinstance(result, dict)
-        assert result["summary"] == "a letter"
-
-
 class TestExtract:
     def _make_client(self, response_data):
         client = MagicMock()
-        client.converse.return_value = _mock_response(response_data)
+        client.messages.create.return_value = _mock_response(response_data)
         return client
 
     def test_invoice_extraction(self):
@@ -142,7 +87,7 @@ class TestExtract:
         result = extract(client, "INVOICE #001 From Acme Corp Bill To Customer Due Date Net 30 Total $270.00 tax included", DocumentType.INVOICE)
         assert isinstance(result, InvoiceExtraction)
         assert result.vendor_name == "Acme Corp"
-        client.converse.assert_called_once()
+        client.messages.create.assert_called_once()
 
     def test_receipt_extraction(self):
         client = self._make_client(SAMPLE_RECEIPT)
@@ -163,41 +108,49 @@ class TestExtract:
         client = MagicMock()
         with pytest.raises(ExtractionError, match="too short"):
             extract(client, "hi", DocumentType.INVOICE)
-        client.converse.assert_not_called()
+        client.messages.create.assert_not_called()
 
     def test_retry_on_failure(self):
         client = MagicMock()
-        client.converse.side_effect = [
-            ClientError({"Error": {"Code": "ThrottlingException", "Message": "slow down"}}, "converse"),
+        error = APIError(
+            message="rate limited",
+            request=MagicMock(),
+            body={"error": {"message": "rate limited"}},
+        )
+        client.messages.create.side_effect = [
+            error,
             _mock_response(SAMPLE_INVOICE),
         ]
         result = extract(client, "INVOICE #001 From Acme Corp Bill To Customer Due Date Net 30 Total Due $270.00 payment", DocumentType.INVOICE)
         assert isinstance(result, InvoiceExtraction)
-        assert client.converse.call_count == 2
+        assert client.messages.create.call_count == 2
 
     def test_raises_after_retries_exhausted(self):
         client = MagicMock()
-        client.converse.side_effect = ClientError(
-            {"Error": {"Code": "ThrottlingException", "Message": "slow down"}}, "converse"
+        error = APIError(
+            message="rate limited",
+            request=MagicMock(),
+            body={"error": {"message": "rate limited"}},
         )
+        client.messages.create.side_effect = error
         with pytest.raises(ExtractionError, match="failed after"):
             extract(client, "INVOICE #001 From Acme Corp Bill To Customer Due Date Net 30 Total Due $270.00 payment", DocumentType.INVOICE)
-        assert client.converse.call_count == 2  # initial + 1 retry
+        assert client.messages.create.call_count == 2  # initial + 1 retry
 
-    def test_converse_called_with_correct_model(self):
+    def test_called_with_correct_model(self):
         client = self._make_client(SAMPLE_INVOICE)
-        extract(client, "INVOICE #001 From Acme Corp Bill To Customer Due Date Net 30 Total $270.00 tax", DocumentType.INVOICE, model_id="test-model")
-        call_kwargs = client.converse.call_args.kwargs
-        assert call_kwargs["modelId"] == "test-model"
+        extract(client, "INVOICE #001 From Acme Corp Bill To Customer Due Date Net 30 Total $270.00 tax", DocumentType.INVOICE, model="test-model")
+        call_kwargs = client.messages.create.call_args.kwargs
+        assert call_kwargs["model"] == "test-model"
 
     def test_output_config_included_for_typed_docs(self):
         client = self._make_client(SAMPLE_INVOICE)
         extract(client, "INVOICE #001 From Acme Corp Bill To Customer Due Date Net 30 Total $270.00 tax", DocumentType.INVOICE)
-        call_kwargs = client.converse.call_args.kwargs
-        assert "outputConfig" in call_kwargs
+        call_kwargs = client.messages.create.call_args.kwargs
+        assert "output_config" in call_kwargs
 
     def test_no_output_config_for_generic(self):
         client = self._make_client({"summary": "something"})
         extract(client, "Some random document text that is long enough to pass the minimum length check for processing", DocumentType.OTHER)
-        call_kwargs = client.converse.call_args.kwargs
-        assert "outputConfig" not in call_kwargs
+        call_kwargs = client.messages.create.call_args.kwargs
+        assert "output_config" not in call_kwargs

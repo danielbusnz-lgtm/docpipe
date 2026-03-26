@@ -7,6 +7,7 @@ across requests. FastAPI's Depends() system handles the lifecycle.
 from collections.abc import Generator
 from typing import Annotated
 
+import anthropic
 import boto3
 from fastapi import Depends
 from sqlalchemy.orm import Session
@@ -45,9 +46,9 @@ def get_dynamo_table():
     return resource.Table(settings.dynamo_table)
 
 
-def get_bedrock_client():
-    """Create a Bedrock runtime client for extraction."""
-    return boto3.client("bedrock-runtime", region_name=settings.aws_region)
+def get_anthropic_client():
+    """Create an Anthropic client for Claude extraction."""
+    return anthropic.Anthropic(api_key=settings.anthropic_api_key)
 
 
 # type aliases for cleaner endpoint signatures

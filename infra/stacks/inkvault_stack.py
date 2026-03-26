@@ -10,7 +10,6 @@ from aws_cdk import (
     Stack,
     aws_apigateway as apigw,
     aws_dynamodb as dynamodb,
-    aws_iam as iam,
     aws_lambda as _lambda,
     aws_s3 as s3,
     aws_s3_notifications as s3n,
@@ -60,18 +59,13 @@ class InkVaultStack(Stack):
                 "INKVAULT_S3_BUCKET": bucket.bucket_name,
                 "INKVAULT_DYNAMO_TABLE": table.table_name,
                 "AWS_REGION": self.region,
+                "ANTHROPIC_API_KEY": "{{resolve:ssm:/inkvault/anthropic-api-key}}",
             },
         )
 
         # permissions
         bucket.grant_read_write(api_function)
         table.grant_read_write_data(api_function)
-
-        # Bedrock access
-        api_function.add_to_role_policy(iam.PolicyStatement(
-            actions=["bedrock:InvokeModel", "bedrock:Converse"],
-            resources=["*"],
-        ))
 
         # --- S3 trigger: auto-process uploads ---
         processor_function = _lambda.DockerImageFunction(
@@ -83,14 +77,11 @@ class InkVaultStack(Stack):
                 "INKVAULT_S3_BUCKET": bucket.bucket_name,
                 "INKVAULT_DYNAMO_TABLE": table.table_name,
                 "AWS_REGION": self.region,
+                "ANTHROPIC_API_KEY": "{{resolve:ssm:/inkvault/anthropic-api-key}}",
             },
         )
         bucket.grant_read(processor_function)
         table.grant_read_write_data(processor_function)
-        processor_function.add_to_role_policy(iam.PolicyStatement(
-            actions=["bedrock:InvokeModel", "bedrock:Converse"],
-            resources=["*"],
-        ))
 
         # trigger on PDF upload
         bucket.add_event_notification(
