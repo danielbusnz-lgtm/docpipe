@@ -1,4 +1,5 @@
-\documentclass[tikz, border=20pt]{standalone}
+\documentclass[tikz, border=0pt]{standalone}
+\usepackage{pagecolor}
 
 \usepackage{fontspec}
 \setsansfont{Inter}[
@@ -24,12 +25,15 @@
 \definecolor{purple}{HTML}{8A3FFC}
 \definecolor{green}{HTML}{198038}
 \definecolor{cyan}{HTML}{0072C3}
-\definecolor{magenta}{HTML}{D02670}
+\definecolor{orange}{HTML}{D02670}
 \definecolor{surface}{HTML}{F4F4F4}
 \definecolor{border}{HTML}{A8A8A8}
 \definecolor{textprimary}{HTML}{161616}
 \definecolor{textsecondary}{HTML}{525252}
 \definecolor{arrowcolor}{HTML}{6F6F6F}
+\definecolor{bg}{HTML}{0D1117}
+\definecolor{bglight}{HTML}{161B22}
+\pagecolor{bg}
 
 % Layers
 \pgfdeclarelayer{background}
@@ -101,14 +105,14 @@
   step/.default=teal,
   container/.style={
     rounded corners=10pt,
-    fill=surface,
-    draw=border!50,
+    fill=white,
+    draw=white!30,
     line width=0.6pt,
     inner sep=14pt,
   },
   clabel/.style={
     font=\sffamily\scriptsize\bfseries,
-    text=textsecondary,
+    text=white,
     anchor=north west,
   },
   flow/.style={
@@ -123,8 +127,7 @@
   },
   elabel/.style={
     font=\sffamily\tiny,
-    text=textsecondary,
-    fill=white,
+    text=white,
     inner sep=2pt,
   },
 }
@@ -168,14 +171,14 @@
 
 % === ROW 3: Processor Lambda ===
 
-\node[service=orange, below=2cm of s3, xshift=1.8cm, minimum width=3.4cm]
+\node[service=orange, below=3cm of s3, xshift=1.8cm, minimum width=3.4cm]
   (processor) {\textbf{Lambda}\\[-1pt]\nsub{Document Processor}};
 
-\draw[flow] (s3.south) |- node[elabel, above right, xshift=-4pt, yshift=-6pt] {S3 event} (processor.west);
+\draw[flow] (s3.south) |- node[elabel, above right, xshift=3pt, yshift=-4pt, text=black] {S3 event} (processor.west);
 
 % === ROW 4: Processing Pipeline ===
 
-\node[step=teal, below=2cm of processor, xshift=-4cm]
+\node[step=teal, below=1.1cm of processor, xshift=-4cm]
   (classify) {\textbf{Classify}\\[-1pt]\nsub{TF-IDF / LogReg}};
 
 \node[step=purple, right=0.7cm of classify]
@@ -187,26 +190,23 @@
 \node[step=green, right=0.7cm of validate]
   (pstore) {\textbf{Store}\\[-1pt]\nsub{PostgreSQL}};
 
-\draw[flow] (processor.south) -- ++(0,-0.6) -| (classify.north);
+\draw[flow] (processor.south) -- ++(0,-.8) -| (classify.north);
 \draw[flow] (classify) -- (extract);
 \draw[flow] (extract) -- (validate);
 \draw[flow] (validate) -- (pstore);
 
 % Store -> PostgreSQL feedback
-\draw[flowlight, draw=primary!50] (pstore.east) -- ++(0.5,0) |- (pg.east);
+\draw[flowlight, draw=primary!50] (pstore.east) -- ++(0.38,0) |- (pg.east);
 
 % === Background containers ===
 
 \begin{pgfonlayer}{background}
   % Full diagram card background
-  \fill[white, rounded corners=14pt]
-    ($(current bounding box.south west) + (-0.4,-0.4)$)
+  \fill[bg, rounded corners=14pt]
+    ($(current bounding box.south west) + (-1,-1)$)
     rectangle
-    ($(current bounding box.north east) + (0.4,0.4)$);
-  \draw[border!40, rounded corners=14pt, line width=0.5pt]
-    ($(current bounding box.south west) + (-0.4,-0.4)$)
-    rectangle
-    ($(current bounding box.north east) + (0.4,0.4)$);
+    ($(current bounding box.north east) + (1,1)$);
+  % outer border removed for dark theme
 
   % Section containers
   \node[container, fit=(s3)(dynamo)(pg),
