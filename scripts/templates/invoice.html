@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+    @page { size: A4; margin: {{ page_margin }}; }
+    body { font-family: {{ body_font }}; font-size: {{ body_font_size }}; color: {{ text_color }}; background: {{ bg_color }}; margin: 0; }
+
+    .invoice-grid { {{ layout_css }} }
+
+    .inv-header { grid-area: header; }
+    .inv-meta { grid-area: meta; }
+    .inv-billing { grid-area: billing; }
+    .inv-shipping { grid-area: shipping; }
+    .inv-items { grid-area: items; }
+    .inv-totals { grid-area: totals; }
+    .inv-terms { grid-area: terms; }
+    .inv-footer { grid-area: footer; }
+
+    .company-name { font-size: {{ heading_font_size }}; font-weight: bold; color: {{ accent_color }}; margin-bottom: 5px; }
+    .company-details { font-size: {{ small_font_size }}; color: {{ muted_color }}; line-height: 1.4; }
+    .doc-title { font-size: 20pt; font-weight: bold; color: {{ accent_color }}; margin-bottom: 5px; }
+    .doc-meta-item { font-size: {{ small_font_size }}; color: {{ muted_color }}; margin-bottom: 3px; }
+    .address-label { font-size: {{ small_font_size }}; font-weight: bold; color: {{ muted_color }}; text-transform: uppercase; margin-bottom: 5px; }
+    .address-text { font-size: {{ small_font_size }}; line-height: 1.5; }
+
+    table { width: 100%; border-collapse: collapse; border-radius: {{ border_radius }}; }
+    th { background-color: {{ table_header_bg }}; color: {{ table_header_text }}; padding: {{ cell_padding }}; text-align: left; font-size: {{ small_font_size }}; }
+    th.amount { text-align: right; }
+    td { padding: {{ cell_padding }}; font-size: {{ small_font_size }}; }
+    td.amount { text-align: right; }
+    {% if table_style == "bordered" %}
+    td { border: 1px solid {{ table_border_color }}; }
+    {% elif table_style == "zebra" %}
+    tr:nth-child(even) td { background-color: {{ table_stripe_color }}; }
+    td { border-bottom: 1px solid {{ table_border_color }}; }
+    {% elif table_style == "minimal" %}
+    td { border-bottom: 1px solid #eee; }
+    {% else %}
+    td { border: none; padding-top: 6px; padding-bottom: 6px; }
+    {% endif %}
+
+    .totals-table { width: {{ totals_width }}; margin-left: auto; }
+    .totals-table td { border-bottom: 1px solid #ddd; }
+    .totals-table .total-row td { font-weight: bold; font-size: 11pt; border-top: 2px solid {{ accent_color }}; border-bottom: none; color: {{ accent_color }}; }
+
+    .inv-footer { font-size: {{ small_font_size }}; color: {{ muted_color }}; border-top: {{ header_border }}; padding-top: 10px; }
+    .inv-terms { font-size: {{ small_font_size }}; color: {{ muted_color }}; }
+    .po-line { font-size: {{ small_font_size }}; color: {{ muted_color }}; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+    <div class="invoice-grid">
+
+        <div class="inv-header">
+            <div class="company-name">{{ vendor_name }}</div>
+            <div class="company-details">
+                {{ vendor_address }}<br>
+                {{ vendor_city }}, {{ vendor_state }} {{ vendor_zip }}<br>
+                Phone: {{ vendor_phone }}<br>
+                {{ vendor_email }}
+                {% if vendor_tax_id %}<br>Tax ID: {{ vendor_tax_id }}{% endif %}
+            </div>
+        </div>
+
+        <div class="inv-meta">
+            <div class="doc-title">{{ doc_label }}</div>
+            <div class="doc-meta-item"><strong>{{ doc_number_label }}:</strong> {{ doc_number }}</div>
+            <div class="doc-meta-item"><strong>Date:</strong> {{ doc_date }}</div>
+            <div class="doc-meta-item"><strong>Due Date:</strong> {{ due_date }}</div>
+            {% if po_number %}<div class="doc-meta-item"><strong>PO #:</strong> {{ po_number }}</div>{% endif %}
+        </div>
+
+        <div class="inv-billing">
+            <div class="address-label">{{ bill_to_label }}</div>
+            <div class="address-text">
+                {{ bill_to_name }}<br>
+                {% if bill_to_company %}{{ bill_to_company }}<br>{% endif %}
+                {{ bill_to_address }}<br>
+                {{ bill_to_city }}, {{ bill_to_state }} {{ bill_to_zip }}
+            </div>
+        </div>
+
+        <div class="inv-shipping">
+            {% if ship_to_name %}
+            <div class="address-label">{{ ship_to_label }}</div>
+            <div class="address-text">
+                {{ ship_to_name }}<br>
+                {{ ship_to_address }}<br>
+                {{ ship_to_city }}, {{ ship_to_state }} {{ ship_to_zip }}
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="inv-items">
+            {% if po_number %}
+            <div class="po-line">Purchase Order: {{ po_number }} | Terms: {{ payment_terms }}</div>
+            {% endif %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Description</th>
+                        <th>{{ qty_label }}</th>
+                        <th class="amount">{{ unit_price_label }}</th>
+                        <th class="amount">{{ amount_label }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in line_items %}
+                    <tr>
+                        <td>{{ item.description }}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td class="amount">{{ currency_symbol }}{{ "{:,.2f}".format(item.unit_price) }}</td>
+                        <td class="amount">{{ currency_symbol }}{{ "{:,.2f}".format(item.amount) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="inv-totals">
+            <table class="totals-table">
+                <tr>
+                    <td>{{ subtotal_label }}</td>
+                    <td class="amount">{{ currency_symbol }}{{ "{:,.2f}".format(subtotal) }}</td>
+                </tr>
+                {% if discount %}
+                <tr>
+                    <td>Discount ({{ discount_pct }}%)</td>
+                    <td class="amount">-{{ currency_symbol }}{{ "{:,.2f}".format(discount) }}</td>
+                </tr>
+                {% endif %}
+                {% if shipping %}
+                <tr>
+                    <td>Shipping</td>
+                    <td class="amount">{{ currency_symbol }}{{ "{:,.2f}".format(shipping) }}</td>
+                </tr>
+                {% endif %}
+                <tr>
+                    <td>Tax ({{ tax_rate }}%)</td>
+                    <td class="amount">{{ currency_symbol }}{{ "{:,.2f}".format(tax) }}</td>
+                </tr>
+                <tr class="total-row">
+                    <td>{{ total_label }}</td>
+                    <td class="amount">{{ currency_symbol }}{{ "{:,.2f}".format(total) }}</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="inv-terms">
+            <strong>{{ terms_label }}:</strong> {{ payment_terms }}<br>
+            {% if notes %}{{ notes }}{% endif %}
+            {% if bank_name %}
+            <br><br><strong>Bank Details:</strong><br>
+            {{ bank_name }} | Account: {{ bank_account }} | Routing: {{ bank_routing }}
+            {% endif %}
+        </div>
+
+        <div class="inv-footer">
+            {{ vendor_name }} | {{ vendor_address }}, {{ vendor_city }}, {{ vendor_state }} {{ vendor_zip }} | {{ vendor_phone }}
+        </div>
+
+    </div>
+</body>
+</html>

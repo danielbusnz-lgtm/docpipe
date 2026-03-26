@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+    @page { size: A4; margin: 2.5cm; }
+    body { font-family: {{ body_font }}; font-size: {{ body_font_size }}; color: {{ text_color }}; line-height: 1.6; }
+    .letterhead { margin-bottom: 25px; border-bottom: 2px solid {{ accent_color }}; padding-bottom: 10px; }
+    .company-name { font-size: {{ heading_font_size }}; font-weight: bold; color: {{ accent_color }}; }
+    .company-details { font-size: {{ small_font_size }}; color: {{ muted_color }}; }
+    .date { margin: 15px 0; }
+    .subject { font-size: 14pt; font-weight: bold; color: {{ accent_color }}; margin: 20px 0 15px; }
+    p { margin-bottom: 12px; }
+    .detail-row { margin-bottom: 6px; }
+    .detail-label { font-weight: bold; display: inline-block; width: 140px; }
+    .signature { margin-top: 40px; }
+    .sig-line { border-top: 1px solid #333; width: 250px; margin-top: 50px; padding-top: 5px; }
+</style>
+</head>
+<body>
+    <div class="letterhead">
+        <div class="company-name">{{ company_name }}</div>
+        <div class="company-details">{{ company_address }}</div>
+    </div>
+
+    <div class="date">{{ date }}</div>
+
+    {% if hr_doc_type == "offer_letter" %}
+    <div>
+        {{ candidate_name }}<br>
+        {{ candidate_address }}
+    </div>
+
+    <div class="subject">Offer of Employment</div>
+
+    <p>Dear {{ candidate_name }},</p>
+
+    <p>We are pleased to extend an offer of employment for the position of
+    <strong>{{ position }}</strong> in our {{ department }} department at {{ company_name }}.
+    This offer is contingent upon successful completion of a background check.</p>
+
+    <div class="detail-row"><span class="detail-label">Position:</span> {{ position }}</div>
+    <div class="detail-row"><span class="detail-label">Department:</span> {{ department }}</div>
+    <div class="detail-row"><span class="detail-label">Annual Salary:</span> {{ salary }}</div>
+    <div class="detail-row"><span class="detail-label">Start Date:</span> {{ start_date }}</div>
+    <div class="detail-row"><span class="detail-label">Reports To:</span> {{ manager }}</div>
+    <div class="detail-row"><span class="detail-label">Benefits:</span> {{ benefits }}</div>
+
+    <p>Please indicate your acceptance by signing below and returning this letter
+    by {{ start_date }}. We look forward to having you on the team.</p>
+
+    {% elif hr_doc_type == "policy_update" %}
+    <div class="subject">{{ policy_title }}</div>
+
+    <p>To All Employees,</p>
+
+    <p>This memo serves to inform you of updates to company policy, effective {{ effective_date }}.
+    Please review the following changes carefully.</p>
+
+    {% for para in paragraphs %}
+    <p>{{ para }}</p>
+    {% endfor %}
+
+    <p>If you have questions about these changes, please contact the HR department.
+    All employees are expected to acknowledge receipt of this update.</p>
+
+    {% elif hr_doc_type == "benefits_summary" %}
+    <div class="subject">Employee Benefits Summary</div>
+
+    <p>The following is a summary of benefits available to eligible employees
+    of {{ company_name }}. Benefits are effective as of your start date and
+    are subject to the terms of each plan document.</p>
+
+    <p>For detailed plan information, contact the HR department or visit the
+    employee portal. Open enrollment occurs annually during the month of November.</p>
+
+    {% endif %}
+
+    <div class="signature">
+        Sincerely,<br>
+        <div class="sig-line">
+            <strong>{{ signatory_name }}</strong><br>
+            {{ signatory_title }}<br>
+            {{ company_name }}
+        </div>
+    </div>
+</body>
+</html>

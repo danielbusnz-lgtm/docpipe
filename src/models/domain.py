@@ -1,16 +1,9 @@
-"""Core domain models for document processing.
+"""Data shapes for the extraction pipeline.
 
-Define the data shapes that flow through the entire pipeline. These models
-represent document types, processing states, and the structured data
-extracted from invoices, receipts, and contracts via Bedrock Claude.
-
-Typical usage example:
-
-    extraction = InvoiceExtraction(
-        vendor_name="Acme Corp",
-        total_amount=1500.00,
-        line_items=[LineItem(description="Widget", unit_price=50, amount=50)],
-    )
+These Pydantic models define what Bedrock Claude returns after
+processing a document. Every other module consumes these: the
+validator checks them, storage writes them to Postgres, the API
+returns them.
 """
 
 from enum import Enum
@@ -25,19 +18,14 @@ class DocumentType(str, Enum):
     INVOICE = "invoice"
     RECEIPT = "receipt"
     CONTRACT = "contract"
+    OTHER = "other"
     UNKNOWN = "unknown"
 
 
 class ProcessingStatus(str, Enum):
-    """Track a document's position in the processing pipeline.
+    """Pipeline status, stored in DynamoDB so callers can poll for progress.
 
-    Attributes:
-        UPLOADED: PDF landed in S3, awaiting processing.
-        CLASSIFYING: sklearn classifier determining document type.
-        EXTRACTING: Bedrock Claude extracting structured data.
-        VALIDATING: Pandas checking extraction integrity.
-        COMPLETED: Extraction stored in Postgres successfully.
-        FAILED: An error occurred, check error_message for details.
+    FAILED also captures the error_message.
     """
 
     UPLOADED = "uploaded"
@@ -49,15 +37,7 @@ class ProcessingStatus(str, Enum):
 
 
 class LineItem(BaseModel):
-    """A single line entry on an invoice or receipt.
-
-    Attributes:
-        description: What was purchased or billed.
-        quantity: Number of units. Must be greater than zero.
-        unit_price: Price per unit.
-        amount: Total for this line (quantity * unit_price).
-        category: Optional expense category for accounting.
-    """
+    """Single line on an invoice or receipt."""
 
     description: str
     quantity: float = Field(default=1.0, gt=0)
@@ -67,19 +47,11 @@ class LineItem(BaseModel):
 
 
 class InvoiceExtraction(BaseModel):
-    """Structured data extracted from an invoice document.
+    """What Bedrock returns after parsing an invoice.
 
-    Attributes:
-        vendor_name: Company or individual that issued the invoice.
-        invoice_number: Vendor's reference number for this invoice.
-        invoice_date: Date the invoice was issued (MM/DD/YYYY).
-        due_date: Payment deadline (MM/DD/YYYY).
-        line_items: Itemized charges on the invoice.
-        subtotal: Sum before tax.
-        tax: Tax amount.
-        total_amount: Final amount owed including tax.
-        currency: ISO 4217 currency code.
-        payment_terms: Terms like "Net 30" or "Due on receipt".
+    Dates come back as strings because Claude's format is
+    unpredictable (MM/DD/YYYY, "January 5, 2025", etc.).
+    The validator normalizes them later.
     """
 
     vendor_name: str
@@ -95,16 +67,10 @@ class InvoiceExtraction(BaseModel):
 
 
 class ReceiptExtraction(BaseModel):
-    """Structured data extracted from a receipt document.
+    """What Bedrock returns after parsing a receipt.
 
-    Attributes:
-        vendor_name: Business where the purchase was made.
-        receipt_date: Date of the transaction (MM/DD/YYYY).
-        line_items: Itemized purchases on the receipt.
-        subtotal: Sum before tax.
-        tax: Tax amount.
-        total_amount: Final amount paid.
-        payment_method: How payment was made (e.g. "Visa ending 4242").
+    Receipts differ from invoices: they represent completed payments
+    (no due_date or payment_terms), and include payment_method instead.
     """
 
     vendor_name: str
@@ -117,15 +83,10 @@ class ReceiptExtraction(BaseModel):
 
 
 class ContractExtraction(BaseModel):
-    """Structured data extracted from a contract document.
+    """What Bedrock returns after parsing a contract.
 
-    Attributes:
-        parties: Names of individuals or organizations in the agreement.
-        effective_date: When the contract takes effect (MM/DD/YYYY).
-        expiration_date: When the contract expires (MM/DD/YYYY).
-        contract_value: Total monetary value if specified.
-        key_terms: Notable clauses or conditions.
-        summary: Brief description of the contract's purpose.
+    Structurally different from invoice/receipt: no line items or
+    totals, but has parties, legal terms, and date ranges instead.
     """
 
     parties: list[str]

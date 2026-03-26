@@ -8,5 +8,12 @@ build/
 .pytest_cache/
 *.joblib
 cdk.out/
+mlruns/
+mlruns.db
+mlartifacts/
+plan_classifier.md
+mlflow_plan.md
 PLAN.md
 CLAUDE.md
+classifier/sample_pdfs/
+classifier/training_data.json

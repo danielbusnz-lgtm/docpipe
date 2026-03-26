@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+    @page { size: A4; margin: {{ page_margin }}; }
+    body { font-family: {{ body_font }}; font-size: {{ body_font_size }}; color: {{ text_color }}; line-height: 1.6; }
+    h1 { font-size: {{ heading_font_size }}; text-align: center; text-transform: uppercase; margin-bottom: {{ section_gap }}; color: {{ accent_color }}; }
+    .parties { margin-bottom: {{ section_gap }}; font-size: {{ body_font_size }}; }
+    .recitals { margin-bottom: {{ section_gap }}; }
+    .recitals p { margin-bottom: 8px; }
+    .section { margin-bottom: 15px; }
+    .section-title { font-weight: bold; font-size: 10.5pt; text-transform: uppercase; margin-bottom: 6px; color: {{ accent_color }}; }
+    .subsection { margin-left: 20px; margin-bottom: 8px; }
+    .signature-block { margin-top: 40px; display: flex; justify-content: space-between; }
+    .sig-party { width: 45%; }
+    .sig-line { border-top: 1px solid {{ text_color }}; margin-top: 40px; padding-top: 5px; font-size: {{ small_font_size }}; }
+    .sig-label { font-size: {{ small_font_size }}; color: {{ muted_color }}; }
+    .footer { margin-top: 30px; font-size: {{ small_font_size }}; color: {{ muted_color }}; text-align: center; border-top: {{ header_border }}; padding-top: 8px; }
+    .exhibit-ref { font-style: italic; color: {{ muted_color }}; }
+</style>
+</head>
+<body>
+    <h1>{{ contract_title }}</h1>
+
+    <div class="parties">
+        <p>This {{ contract_type }} (the "Agreement") is entered into as of {{ effective_date }}
+        (the "Effective Date"), by and between:</p>
+
+        <p><strong>{{ party_a_name }}</strong>, a {{ party_a_entity_type }} with principal place of business at
+        {{ party_a_address }}, {{ party_a_city }}, {{ party_a_state }} {{ party_a_zip }}
+        (hereinafter referred to as "{{ party_a_role }}"),</p>
+
+        <p>AND</p>
+
+        <p><strong>{{ party_b_name }}</strong>{% if party_b_entity_type %}, a {{ party_b_entity_type }}{% endif %} with address at
+        {{ party_b_address }}, {{ party_b_city }}, {{ party_b_state }} {{ party_b_zip }}
+        (hereinafter referred to as "{{ party_b_role }}").</p>
+    </div>
+
+    {% if recitals %}
+    <div class="recitals">
+        {% for recital in recitals %}
+        <p>WHEREAS, {{ recital }};</p>
+        {% endfor %}
+        <p>NOW, THEREFORE, in consideration of the mutual covenants and agreements herein contained,
+        and for other good and valuable consideration, the receipt and sufficiency of which are hereby
+        acknowledged, the parties agree as follows:</p>
+    </div>
+    {% endif %}
+
+    {% for section in sections %}
+    <div class="section">
+        <div class="section-title">{{ section.number }}. {{ section.title }}</div>
+        {% for clause in section.clauses %}
+        <div class="subsection">{{ section.number }}.{{ loop.index }} {{ clause }}</div>
+        {% endfor %}
+    </div>
+    {% endfor %}
+
+    {% if exhibits %}
+    <div class="section">
+        <div class="section-title">EXHIBITS</div>
+        {% for exhibit in exhibits %}
+        <div class="subsection exhibit-ref">{{ exhibit }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <p>IN WITNESS WHEREOF, the parties hereto have executed this Agreement as of the date first written above.</p>
+
+    <div class="signature-block">
+        <div class="sig-party">
+            <div class="sig-line">
+                <strong>{{ party_a_name }}</strong><br>
+                <span class="sig-label">By: _________________________</span><br>
+                <span class="sig-label">Name: {{ party_a_signatory }}</span><br>
+                <span class="sig-label">Title: {{ party_a_title }}</span><br>
+                <span class="sig-label">Date: _________________________</span>
+            </div>
+        </div>
+        <div class="sig-party">
+            <div class="sig-line">
+                <strong>{{ party_b_name }}</strong><br>
+                <span class="sig-label">By: _________________________</span><br>
+                <span class="sig-label">Name: {{ party_b_signatory }}</span><br>
+                {% if party_b_title %}<span class="sig-label">Title: {{ party_b_title }}</span><br>{% endif %}
+                <span class="sig-label">Date: _________________________</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        {{ contract_title }} | {{ party_a_name }} and {{ party_b_name }} | Effective {{ effective_date }} | Page 1 of {{ page_count }}
+    </div>
+</body>
+</html>

@@ -2,9 +2,9 @@ services:
   postgres:
     image: postgres:16
     environment:
-      POSTGRES_DB: docpipe
-      POSTGRES_USER: docpipe
-      POSTGRES_PASSWORD: docpipe
+      POSTGRES_DB: inkvault
+      POSTGRES_USER: inkvault
+      POSTGRES_PASSWORD: inkvault
     ports:
       - "5432:5432"
     volumes:

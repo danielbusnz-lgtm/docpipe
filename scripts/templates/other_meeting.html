@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+    @page { size: A4; margin: {{ page_margin }}; }
+    body { font-family: {{ body_font }}; font-size: {{ body_font_size }}; color: {{ text_color }}; line-height: 1.5; }
+    h1 { font-size: {{ heading_font_size }}; color: {{ accent_color }}; margin-bottom: 5px; }
+    .subtitle { font-size: {{ body_font_size }}; color: {{ muted_color }}; margin-bottom: {{ section_gap }}; }
+    .meta td { padding: 2px 10px; font-size: {{ small_font_size }}; }
+    .meta td:first-child { font-weight: bold; color: {{ muted_color }}; width: 100px; }
+    .attendees { margin: {{ section_gap }} 0; font-size: {{ small_font_size }}; }
+    .attendees strong { color: {{ accent_color }}; }
+    .agenda-item { margin-bottom: 15px; }
+    .agenda-title { font-weight: bold; color: {{ accent_color }}; margin-bottom: 4px; }
+    .discussion { margin-left: 15px; margin-bottom: 6px; }
+    .action { margin-left: 30px; font-size: {{ small_font_size }}; margin-bottom: 3px; }
+    .action-label { color: {{ accent_color }}; font-weight: bold; }
+    .footer { margin-top: {{ section_gap }}; font-size: {{ small_font_size }}; color: {{ muted_color }}; border-top: 1px solid #ddd; padding-top: 8px; }
+</style>
+</head>
+<body>
+    <h1>MEETING MINUTES</h1>
+    <div class="subtitle">{{ meeting_title }} | {{ organization }}</div>
+
+    <table class="meta">
+        <tr><td>Date</td><td>{{ date }}</td></tr>
+        <tr><td>Time</td><td>{{ time_start }} to {{ time_end }}</td></tr>
+        <tr><td>Location</td><td>{{ location }}</td></tr>
+        <tr><td>Facilitator</td><td>{{ facilitator }}</td></tr>
+    </table>
+
+    <div class="attendees">
+        <strong>Present:</strong> {{ attendees | join(", ") }}<br>
+        {% if absent %}<strong>Absent:</strong> {{ absent | join(", ") }}{% endif %}
+    </div>
+
+    {% for item in agenda_items %}
+    <div class="agenda-item">
+        <div class="agenda-title">{{ item.number }}. {{ item.title }}</div>
+        <div class="discussion">{{ item.discussion }}</div>
+        {% for action in item.actions %}
+        <div class="action">
+            <span class="action-label">ACTION:</span> {{ action.task }}
+            ({{ action.assigned }}, due {{ action.due }})
+        </div>
+        {% endfor %}
+    </div>
+    {% endfor %}
+
+    <div class="footer">
+        Next meeting: {{ next_meeting }}<br>
+        Minutes prepared by: {{ prepared_by }}
+    </div>
+</body>
+</html>

@@ -1,18 +1,8 @@
-"""SQLAlchemy ORM table definitions for PostgreSQL.
+"""Postgres table definitions.
 
-Map Python classes to Postgres tables. Each class represents one table
-and each attribute represents one column. These mirror the Pydantic
-domain models but define how data is persisted, not how it flows
-through the pipeline.
-
-Typical usage example:
-
-    from src.db.session import get_session
-    from src.models.database import Document
-
-    with get_session() as session:
-        doc = Document(id=uuid4(), filename="invoice.pdf", s3_key="docs/invoice.pdf")
-        session.add(doc)
+These mirror the Pydantic domain models but handle persistence.
+Each extraction type gets its own table linked back to documents
+via foreign key. Line items are shared across invoices and receipts.
 """
 
 import uuid
@@ -29,16 +19,7 @@ class Base(DeclarativeBase):
 
 
 class Document(Base):
-    """Anchor table for uploaded documents.
-
-    Attributes:
-        id: Unique identifier for the document.
-        filename: Original name of the uploaded file.
-        s3_key: Object key in the S3 bucket.
-        doc_type: Classified document type (invoice, receipt, contract).
-        created_at: When the document was uploaded.
-        updated_at: Last status change timestamp.
-    """
+    """One row per uploaded PDF. Everything else links back here."""
 
     __tablename__ = "documents"
 
@@ -55,22 +36,7 @@ class Document(Base):
 
 
 class InvoiceExtractionRow(Base):
-    """Structured data extracted from an invoice document.
-
-    Attributes:
-        id: Primary key.
-        document_id: Foreign key to the documents table.
-        vendor_name: Company that issued the invoice.
-        invoice_number: Vendor's reference number.
-        invoice_date: When the invoice was issued.
-        due_date: Payment deadline.
-        subtotal: Sum before tax.
-        tax: Tax amount.
-        total_amount: Final amount owed.
-        currency: ISO 4217 currency code.
-        payment_terms: Terms like "Net 30".
-        raw_json: Full Bedrock response for debugging.
-    """
+    """Extracted invoice data. raw_json keeps the full Bedrock response for debugging."""
 
     __tablename__ = "invoice_extractions"
 
@@ -96,19 +62,7 @@ class InvoiceExtractionRow(Base):
 
 
 class ReceiptExtractionRow(Base):
-    """Structured data extracted from a receipt document.
-
-    Attributes:
-        id: Primary key.
-        document_id: Foreign key to the documents table.
-        vendor_name: Business where the purchase was made.
-        receipt_date: Date of the transaction.
-        subtotal: Sum before tax.
-        tax: Tax amount.
-        total_amount: Final amount paid.
-        payment_method: How payment was made.
-        raw_json: Full Bedrock response for debugging.
-    """
+    """Extracted receipt data. Same structure as invoice but with payment_method instead of due_date/terms."""
 
     __tablename__ = "receipt_extractions"
 
@@ -131,19 +85,7 @@ class ReceiptExtractionRow(Base):
 
 
 class ContractExtractionRow(Base):
-    """Structured data extracted from a contract document.
-
-    Attributes:
-        id: Primary key.
-        document_id: Foreign key to the documents table.
-        parties: Names of individuals or organizations.
-        effective_date: When the contract takes effect.
-        expiration_date: When the contract expires.
-        contract_value: Total monetary value.
-        key_terms: Notable clauses or conditions.
-        summary: Brief description of the contract.
-        raw_json: Full Bedrock response for debugging.
-    """
+    """Extracted contract data. No line items or totals, just parties and terms."""
 
     __tablename__ = "contract_extractions"
 
@@ -162,17 +104,11 @@ class ContractExtractionRow(Base):
 
 
 class LineItemRow(Base):
-    """A single line entry shared across invoice and receipt extractions.
+    """Shared across invoices and receipts.
 
-    Attributes:
-        id: Primary key.
-        extraction_id: Foreign key to the parent extraction row.
-        extraction_type: Which table the parent belongs to ("invoice" or "receipt").
-        description: What was purchased or billed.
-        quantity: Number of units.
-        unit_price: Price per unit.
-        amount: Total for this line.
-        category: Optional expense category.
+    extraction_type tracks which table the parent lives in since
+    extraction_id could point to either invoice_extractions or
+    receipt_extractions.
     """
 
     __tablename__ = "line_items"

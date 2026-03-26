@@ -1,25 +1,18 @@
-"""API request and response schemas.
+"""API response shapes for FastAPI endpoints.
 
-Define the shapes for data entering and leaving the FastAPI endpoints.
-These are separate from domain models to keep API concerns decoupled
-from core extraction logic.
+Separate from domain models so we can change the API surface
+without touching extraction logic.
 """
 
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from src.models.domain import DocumentType, ProcessingStatus
 
 
 class DocumentUploadResponse(BaseModel):
-    """Return after a successful document upload.
-
-    Attributes:
-        document_id: Unique identifier assigned to the uploaded document.
-        filename: Original name of the uploaded file.
-        status: Initial processing status, always UPLOADED.
-    """
+    """Returned immediately after a PDF is uploaded."""
 
     document_id: str
     filename: str
@@ -27,19 +20,12 @@ class DocumentUploadResponse(BaseModel):
 
 
 class DocumentDetail(BaseModel):
-    """Full detail for a single document including extraction results.
+    """Full document info including extraction results.
 
-    Attributes:
-        document_id: Unique identifier for the document.
-        filename: Original name of the uploaded file.
-        s3_key: Object key in the S3 bucket.
-        doc_type: Classified document type, if determined.
-        status: Current position in the processing pipeline.
-        classification_confidence: Classifier's confidence score (0.0 to 1.0).
-        created_at: ISO timestamp of when the document was uploaded.
-        updated_at: ISO timestamp of the last status change.
-        error_message: Error details if processing failed.
-        extracted_data: Structured extraction results from Bedrock Claude.
+    extracted_data is a generic dict because it could be an
+    InvoiceExtraction, ReceiptExtraction, or ContractExtraction
+    depending on doc_type. Kept loose here to avoid coupling
+    the API schema to every extraction model.
     """
 
     document_id: str
@@ -55,14 +41,7 @@ class DocumentDetail(BaseModel):
 
 
 class DocumentListResponse(BaseModel):
-    """Paginated list of documents.
-
-    Attributes:
-        documents: List of document details for the current page.
-        total: Total number of documents matching the query.
-        limit: Maximum number of documents per page.
-        offset: Number of documents skipped from the start.
-    """
+    """Paginated list for GET /documents."""
 
     documents: list[DocumentDetail]
     total: int
@@ -71,14 +50,7 @@ class DocumentListResponse(BaseModel):
 
 
 class HealthResponse(BaseModel):
-    """Health check response for service dependencies.
-
-    Attributes:
-        status: Overall health status.
-        postgres: Whether the PostgreSQL connection is alive.
-        dynamodb: Whether the DynamoDB table is accessible.
-        s3: Whether the S3 bucket is reachable.
-    """
+    """Quick connectivity check for all three backends."""
 
     status: str = "ok"
     postgres: bool
