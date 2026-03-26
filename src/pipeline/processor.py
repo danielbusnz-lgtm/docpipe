@@ -33,7 +33,7 @@ def _extract_text(s3_client, bucket: str, s3_key: str) -> str:
 def process_document(
     document_id: str,
     s3_client,
-    bedrock_client,
+    anthropic_client,
     dynamo_table,
     db_session,
     bucket: str,
@@ -43,7 +43,7 @@ def process_document(
     Args:
         document_id: The document to process.
         s3_client: boto3 S3 client.
-        bedrock_client: boto3 bedrock-runtime client.
+        anthropic_client: anthropic.Anthropic client.
         dynamo_table: boto3 DynamoDB Table resource.
         db_session: SQLAlchemy session.
         bucket: S3 bucket name.
@@ -77,7 +77,7 @@ def process_document(
             logger.info("Skipping extraction for %s (type=%s)", document_id, doc_type.value)
             return
 
-        extraction = extractor.extract(bedrock_client, text, doc_type)
+        extraction = extractor.extract(anthropic_client, text, doc_type)
 
         # --- step 3: validate ---
         dynamo.update_status(dynamo_table, document_id, "validating")

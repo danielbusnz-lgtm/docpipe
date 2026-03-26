@@ -12,7 +12,6 @@ from sqlalchemy.orm import Session
 
 from src.models.database import (
     ContractExtractionRow,
-    Document,
     InvoiceExtractionRow,
     LineItemRow,
     ReceiptExtractionRow,
@@ -109,15 +108,7 @@ def store_contract(session: Session, document_id: uuid.UUID,
 
 def store(session: Session, document_id: uuid.UUID, doc_type: DocumentType,
           extraction, raw_json: dict | None = None):
-    """Route to the correct storage function based on document type.
-
-    Also updates the document's doc_type in the documents table.
-    """
-    # update the document record with the classified type
-    doc = session.get(Document, document_id)
-    if doc:
-        doc.doc_type = doc_type.value
-
+    """Route to the correct storage function based on document type."""
     if isinstance(extraction, InvoiceExtraction):
         return store_invoice(session, document_id, extraction, raw_json)
     elif isinstance(extraction, ReceiptExtraction):

@@ -11,9 +11,10 @@ class Settings:
         "INKVAULT_PG_URL",
         "postgresql://inkvault:inkvault@localhost:5432/inkvault",
     )
-    bedrock_model_id: str = os.getenv(
-        "INKVAULT_BEDROCK_MODEL",
-        "anthropic.claude-sonnet-4-20250514-v1:0",
+    anthropic_api_key: str = os.getenv("ANTHROPIC_API_KEY", "")
+    anthropic_model: str = os.getenv(
+        "INKVAULT_ANTHROPIC_MODEL",
+        "claude-sonnet-4-6",
     )
     s3_endpoint_url: str | None = os.getenv("INKVAULT_S3_ENDPOINT", None)
     dynamo_endpoint_url: str | None = os.getenv("INKVAULT_DYNAMO_ENDPOINT", None)

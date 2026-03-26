@@ -1,47 +1,31 @@
 """Postgres table definitions.
 
-These mirror the Pydantic domain models but handle persistence.
-Each extraction type gets its own table linked back to documents
-via foreign key. Line items are shared across invoices and receipts.
+Extraction results live here. Document metadata (filename, status,
+s3_key) lives in DynamoDB, so there's no documents table. The
+extraction tables reference document_id as a plain UUID column
+without a foreign key.
 """
 
 import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import ForeignKey, Numeric, String, Text
+from sqlalchemy import Numeric, String, Text
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
 class Base(DeclarativeBase):
     """Base class for all ORM models."""
 
 
-class Document(Base):
-    """One row per uploaded PDF. Everything else links back here."""
-
-    __tablename__ = "documents"
-
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    filename: Mapped[str] = mapped_column(String(255))
-    s3_key: Mapped[str] = mapped_column(String(500))
-    doc_type: Mapped[Optional[str]] = mapped_column(String(50), default=None)
-    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc))
-    updated_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc))
-
-    invoice_extraction: Mapped[Optional["InvoiceExtractionRow"]] = relationship(back_populates="document", uselist=False)
-    receipt_extraction: Mapped[Optional["ReceiptExtractionRow"]] = relationship(back_populates="document", uselist=False)
-    contract_extraction: Mapped[Optional["ContractExtractionRow"]] = relationship(back_populates="document", uselist=False)
-
-
 class InvoiceExtractionRow(Base):
-    """Extracted invoice data. raw_json keeps the full Bedrock response for debugging."""
+    """Extracted invoice data. raw_json keeps the full Claude response for debugging."""
 
     __tablename__ = "invoice_extractions"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    document_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("documents.id", ondelete="CASCADE"))
+    document_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), index=True)
     vendor_name: Mapped[str] = mapped_column(String(255))
     invoice_number: Mapped[Optional[str]] = mapped_column(String(100), default=None)
     invoice_date: Mapped[Optional[str]] = mapped_column(String(50), default=None)
@@ -54,8 +38,6 @@ class InvoiceExtractionRow(Base):
     raw_json: Mapped[Optional[dict]] = mapped_column(JSONB, default=None)
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc))
 
-    document: Mapped["Document"] = relationship(back_populates="invoice_extraction")
-
 
 class ReceiptExtractionRow(Base):
     """Extracted receipt data. Same structure as invoice but with payment_method instead of due_date/terms."""
@@ -63,7 +45,7 @@ class ReceiptExtractionRow(Base):
     __tablename__ = "receipt_extractions"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    document_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("documents.id", ondelete="CASCADE"))
+    document_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), index=True)
     vendor_name: Mapped[str] = mapped_column(String(255))
     receipt_date: Mapped[Optional[str]] = mapped_column(String(50), default=None)
     subtotal: Mapped[Optional[float]] = mapped_column(Numeric(12, 2), default=None)
@@ -73,8 +55,6 @@ class ReceiptExtractionRow(Base):
     raw_json: Mapped[Optional[dict]] = mapped_column(JSONB, default=None)
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc))
 
-    document: Mapped["Document"] = relationship(back_populates="receipt_extraction")
-
 
 class ContractExtractionRow(Base):
     """Extracted contract data. No line items or totals, just parties and terms."""
@@ -82,7 +62,7 @@ class ContractExtractionRow(Base):
     __tablename__ = "contract_extractions"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    document_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("documents.id", ondelete="CASCADE"))
+    document_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), index=True)
     parties: Mapped[Optional[list]] = mapped_column(ARRAY(Text), default=None)
     effective_date: Mapped[Optional[str]] = mapped_column(String(50), default=None)
     expiration_date: Mapped[Optional[str]] = mapped_column(String(50), default=None)
@@ -91,8 +71,6 @@ class ContractExtractionRow(Base):
     summary: Mapped[Optional[str]] = mapped_column(Text, default=None)
     raw_json: Mapped[Optional[dict]] = mapped_column(JSONB, default=None)
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc))
-
-    document: Mapped["Document"] = relationship(back_populates="contract_extraction")
 
 
 class LineItemRow(Base):

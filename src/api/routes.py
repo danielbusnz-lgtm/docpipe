@@ -7,7 +7,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, UploadFi
 
 from src.api.deps import (
     DbSession,
-    get_bedrock_client,
+    get_anthropic_client,
     get_dynamo_table,
     get_s3_client,
 )
@@ -33,7 +33,7 @@ async def upload_document(
     background_tasks: BackgroundTasks,
     s3_client=Depends(get_s3_client),
     dynamo_table=Depends(get_dynamo_table),
-    bedrock_client=Depends(get_bedrock_client),
+    anthropic_client=Depends(get_anthropic_client),
     db: DbSession = None,
 ):
     """Upload a PDF and start processing in the background."""
@@ -54,7 +54,7 @@ async def upload_document(
         process_document,
         document_id=document_id,
         s3_client=s3_client,
-        bedrock_client=bedrock_client,
+        anthropic_client=anthropic_client,
         dynamo_table=dynamo_table,
         db_session=db,
         bucket=settings.s3_bucket,

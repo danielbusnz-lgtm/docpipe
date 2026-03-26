@@ -13,7 +13,7 @@ from src.pipeline.processor import process_document
 def mock_deps():
     """Create all the mock dependencies the processor needs."""
     s3_client = MagicMock()
-    bedrock_client = MagicMock()
+    anthropic_client = MagicMock()
     dynamo_table = MagicMock()
     db_session = MagicMock()
 
@@ -29,7 +29,7 @@ def mock_deps():
     return {
         "document_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
         "s3_client": s3_client,
-        "bedrock_client": bedrock_client,
+        "anthropic_client": anthropic_client,
         "dynamo_table": dynamo_table,
         "db_session": db_session,
         "bucket": "test-bucket",
