@@ -33,64 +33,38 @@ Upload a PDF. The pipeline classifies it (TF-IDF + LogisticRegression), extracts
 
 ## Project Structure
 
-```mermaid
-graph LR
-  subgraph src["src/"]
-    direction TB
-    main["main.py<br/><small>FastAPI + Lambda handler</small>"]
-    config["config.py<br/><small>env settings</small>"]
-
-    subgraph api["api/"]
-      routes["routes.py"]
-      deps["deps.py"]
-    end
-
-    subgraph db["db/"]
-      session["session.py"]
-      dynamo["dynamo.py"]
-    end
-
-    subgraph models["models/"]
-      domain["domain.py<br/><small>Pydantic extractions</small>"]
-      schemas["schemas.py"]
-      database["database.py<br/><small>SQLAlchemy ORM</small>"]
-    end
-
-    subgraph services["services/"]
-      classifier["classifier.py<br/><small>TF-IDF classification</small>"]
-      extractor["extractor.py<br/><small>Claude extraction</small>"]
-      validator["validator.py"]
-      storage["storage.py"]
-      s3["s3.py"]
-    end
-
-    subgraph pipeline["pipeline/"]
-      processor["processor.py<br/><small>classify → extract → validate → store</small>"]
-    end
-  end
-
-  subgraph scripts["scripts/"]
-    generate["generate_training_data.py"]
-    train["train_classifier.py"]
-    providers["providers/<br/><small>Faker data generators</small>"]
-    templates["templates/<br/><small>Jinja2 HTML → PDF</small>"]
-  end
-
-  subgraph other[" "]
-    classifierDir["classifier/<br/><small>model + vocab</small>"]
-    infra["infra/<br/><small>AWS CDK stacks</small>"]
-    migrations["migrations/<br/><small>Alembic</small>"]
-    tests["tests/<br/><small>108 tests</small>"]
-  end
-
-  style src fill:#0d1117,stroke:#30363d,color:#e6edf3
-  style scripts fill:#0d1117,stroke:#30363d,color:#e6edf3
-  style other fill:none,stroke:none
-  style api fill:#161b22,stroke:#30363d,color:#e6edf3
-  style db fill:#161b22,stroke:#30363d,color:#e6edf3
-  style models fill:#161b22,stroke:#30363d,color:#e6edf3
-  style services fill:#161b22,stroke:#30363d,color:#e6edf3
-  style pipeline fill:#161b22,stroke:#30363d,color:#e6edf3
+```
+inkvault/
+├── src/
+│   ├── api/
+│   │   ├── routes.py              # REST endpoints
+│   │   └── deps.py                # dependency injection
+│   ├── db/
+│   │   ├── session.py             # SQLAlchemy engine
+│   │   └── dynamo.py              # DynamoDB CRUD
+│   ├── models/
+│   │   ├── domain.py              # Pydantic extraction models
+│   │   ├── schemas.py             # API response shapes
+│   │   └── database.py            # SQLAlchemy ORM tables
+│   ├── services/
+│   │   ├── classifier.py          # TF-IDF document classification
+│   │   ├── extractor.py           # Claude structured extraction
+│   │   ├── validator.py           # math and field validation
+│   │   ├── storage.py             # write extractions to Postgres
+│   │   └── s3.py                  # S3 file operations
+│   ├── pipeline/
+│   │   └── processor.py           # classify > extract > validate > store
+│   ├── config.py                  # settings from env vars
+│   └── main.py                    # FastAPI app + Lambda handler
+├── scripts/
+│   ├── generate_training_data.py  # parallel synthetic PDF generation
+│   ├── train_classifier.py        # MLflow training with GridSearchCV
+│   ├── providers/                 # Faker data generators
+│   └── templates/                 # Jinja2 HTML for PDF rendering
+├── classifier/                    # trained model + vocab
+├── infra/                         # AWS CDK stack definitions
+├── migrations/                    # Alembic database migrations
+└── tests/                         # 108 tests
 ```
 
 ## API Endpoints
