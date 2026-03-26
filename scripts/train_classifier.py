@@ -356,7 +356,7 @@ def _plot_roc_curves(y_true, y_proba, classes, path: Path):
         RocCurveDisplay.from_predictions(
             y_bin[:, i], y_proba[:, i],
             name=f"{cls}",
-            color=CB_COLORS[i],
+            curve_kwargs=dict(color=CB_COLORS[i]),
             ax=ax,
             plot_chance_level=(i == 0),
         )
@@ -421,3 +421,123 @@ def save_plots(y_true, y_pred, y_proba, classes, tmpdir: Path):
     _plot_roc_curves(y_true, y_proba, classes, tmpdir / "roc_curves.png")
     _plot_pr_curves(y_true, y_proba, classes, tmpdir / "pr_curves.png")
     _plot_report_heatmap(y_true, y_pred, classes, tmpdir / "classification_report.png")
+
+
+def save_manifest(metrics, best_params, classes, label_counts, data_path, tmpdir: Path) -> Path:
+    """Record everything needed to reproduce this training run."""
+    manifest = {
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "python_version": platform.python_version(),
+        "sklearn_version": __import__("sklearn").__version__,
+        "mlflow_version": mlflow.__version__,
+        "data_path": str(data_path),
+        "data_md5": file_md5(data_path),
+        "n_samples": sum(label_counts.values()),
+        "class_counts": label_counts,
+        "cv_folds": CV_FOLDS,
+        "confidence_threshold": CONFIDENCE_THRESHOLD,
+        "random_state": RANDOM_STATE,
+        "best_params": {str(k): str(v) for k, v in best_params.items()},
+        "metrics": metrics,
+    }
+    path = tmpdir / "manifest.json"
+    with open(path, "w") as f:
+        json.dump(manifest, f, indent=2)
+    return path
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--data-path", type=Path, default=TRAINING_DATA_PATH)
+    args = parser.parse_args()
+
+    texts, labels = load_data(args.data_path)
+    classes = sorted(set(labels))
+    label_counts = {l: labels.count(l) for l in classes}
+
+    # MLflow setup
+    os.environ.setdefault("MLFLOW_TRACKING_URI", f"sqlite:///{Path.cwd() / 'mlruns.db'}")
+    mlflow.set_experiment("inkvault-classifier")
+
+    with mlflow.start_run(run_name="train") as run:
+
+        # dataset params
+        mlflow.log_params({
+            "n_samples": len(texts),
+            "n_classes": len(classes),
+            "cv_folds": CV_FOLDS,
+            "confidence_threshold": CONFIDENCE_THRESHOLD,
+            "random_state": RANDOM_STATE,
+            "data_md5": file_md5(args.data_path),
+        })
+        for cls, count in label_counts.items():
+            mlflow.log_param(f"n_{cls}", count)
+
+        # grid search
+        logger.info("Running grid search (12 combos x %d folds)...", CV_FOLDS)
+        search = run_grid_search(texts, labels)
+        log_grid_search_runs(search)
+
+        best_pipeline = search.best_estimator_
+        mlflow.log_params({f"best_{k}": str(v) for k, v in search.best_params_.items()})
+        mlflow.log_metric("best_cv_f1", round(search.best_score_, 4))
+
+        # out-of-fold evaluation using a fresh pipeline with the best params
+        logger.info("Running out-of-fold evaluation...")
+        eval_pipeline = build_pipeline()
+        eval_pipeline.set_params(**search.best_params_)
+        y_true, y_pred, y_proba = evaluate_oof(eval_pipeline, texts, labels)
+
+        # refit on all data for the final model
+        best_pipeline.fit(texts, labels)
+        classes = list(best_pipeline.classes_)
+
+        # metrics
+        metrics = compute_metrics(y_true, y_pred, y_proba, classes)
+        mlflow.log_metrics(metrics)
+        logger.info("macro_f1=%.4f  accuracy=%.4f  coverage=%.1f%%",
+                     metrics["macro_f1"], metrics["accuracy"],
+                     metrics["coverage_at_threshold"] * 100)
+
+        # artifacts
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir = Path(tmpdir)
+
+            # plots
+            logger.info("Generating plots...")
+            save_plots(y_true, y_pred, y_proba, classes, tmpdir)
+            for png in tmpdir.glob("*.png"):
+                mlflow.log_artifact(str(png), artifact_path="plots")
+
+            # classification report JSON
+            report = classification_report(y_true, y_pred, target_names=classes, output_dict=True)
+            report_path = tmpdir / "classification_report.json"
+            with open(report_path, "w") as f:
+                json.dump(report, f, indent=2)
+            mlflow.log_artifact(str(report_path), artifact_path="reports")
+
+            # manifest
+            manifest_path = save_manifest(
+                metrics, search.best_params_, classes, label_counts, args.data_path, tmpdir
+            )
+            mlflow.log_artifact(str(manifest_path), artifact_path="reports")
+
+            # joblib fallback for Lambda
+            joblib_path = tmpdir / "classifier.joblib"
+            joblib.dump(best_pipeline, joblib_path)
+            mlflow.log_artifact(str(joblib_path), artifact_path="model_joblib")
+
+        # MLflow model registry
+        mlflow.sklearn.log_model(
+            sk_model=best_pipeline,
+            artifact_path="model",
+            registered_model_name="inkvault-document-classifier",
+            input_example=texts[:3],
+        )
+
+        logger.info("Run ID: %s", run.info.run_id)
+        logger.info("Done. Run 'mlflow ui' to view results.")
+
+
+if __name__ == "__main__":
+    main()
