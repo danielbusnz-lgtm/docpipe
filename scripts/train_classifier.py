@@ -528,11 +528,13 @@ def main():
             mlflow.log_artifact(str(joblib_path), artifact_path="model_joblib")
 
         # MLflow model registry
+        import pandas as pd
         mlflow.sklearn.log_model(
             sk_model=best_pipeline,
             artifact_path="model",
             registered_model_name="inkvault-document-classifier",
-            input_example=texts[:3],
+            input_example=pd.DataFrame({"text": texts[:3]}),
+            pip_requirements=["scikit-learn", "joblib"],
         )
 
         logger.info("Run ID: %s", run.info.run_id)
