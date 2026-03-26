@@ -33,39 +33,64 @@ Upload a PDF. The pipeline classifies it (TF-IDF + LogisticRegression), extracts
 
 ## Project Structure
 
-```
-src/
-  api/
-    routes.py          # REST endpoints
-    deps.py            # FastAPI dependency injection
-  db/
-    session.py         # SQLAlchemy engine + session
-    dynamo.py          # DynamoDB CRUD
-  models/
-    domain.py          # Pydantic extraction models
-    schemas.py         # API response shapes
-    database.py        # SQLAlchemy ORM tables
-  services/
-    classifier.py      # TF-IDF document classification
-    extractor.py       # Bedrock Claude structured extraction
-    validator.py       # Math and field validation
-    storage.py         # Write extractions to Postgres
-    s3.py              # S3 file operations
-  pipeline/
-    processor.py       # Orchestrates classify > extract > validate > store
-  config.py            # Settings from environment variables
-  main.py              # FastAPI app + Lambda handler
+```mermaid
+graph LR
+  subgraph src["src/"]
+    direction TB
+    main["main.py<br/><small>FastAPI + Lambda handler</small>"]
+    config["config.py<br/><small>env settings</small>"]
 
-scripts/
-  generate_training_data.py   # Parallel synthetic PDF generation
-  train_classifier.py         # MLflow training with GridSearchCV
-  providers/                  # Faker providers (invoice, receipt, contract, other)
-  templates/                  # Jinja2 HTML templates for PDF rendering
+    subgraph api["api/"]
+      routes["routes.py"]
+      deps["deps.py"]
+    end
 
-classifier/                   # Trained model artifacts + vocab
-infra/                        # AWS CDK stack definitions
-migrations/                   # Alembic database migrations
-tests/                        # 108 tests
+    subgraph db["db/"]
+      session["session.py"]
+      dynamo["dynamo.py"]
+    end
+
+    subgraph models["models/"]
+      domain["domain.py<br/><small>Pydantic extractions</small>"]
+      schemas["schemas.py"]
+      database["database.py<br/><small>SQLAlchemy ORM</small>"]
+    end
+
+    subgraph services["services/"]
+      classifier["classifier.py<br/><small>TF-IDF classification</small>"]
+      extractor["extractor.py<br/><small>Claude extraction</small>"]
+      validator["validator.py"]
+      storage["storage.py"]
+      s3["s3.py"]
+    end
+
+    subgraph pipeline["pipeline/"]
+      processor["processor.py<br/><small>classify → extract → validate → store</small>"]
+    end
+  end
+
+  subgraph scripts["scripts/"]
+    generate["generate_training_data.py"]
+    train["train_classifier.py"]
+    providers["providers/<br/><small>Faker data generators</small>"]
+    templates["templates/<br/><small>Jinja2 HTML → PDF</small>"]
+  end
+
+  subgraph other[" "]
+    classifierDir["classifier/<br/><small>model + vocab</small>"]
+    infra["infra/<br/><small>AWS CDK stacks</small>"]
+    migrations["migrations/<br/><small>Alembic</small>"]
+    tests["tests/<br/><small>108 tests</small>"]
+  end
+
+  style src fill:#0d1117,stroke:#30363d,color:#e6edf3
+  style scripts fill:#0d1117,stroke:#30363d,color:#e6edf3
+  style other fill:none,stroke:none
+  style api fill:#161b22,stroke:#30363d,color:#e6edf3
+  style db fill:#161b22,stroke:#30363d,color:#e6edf3
+  style models fill:#161b22,stroke:#30363d,color:#e6edf3
+  style services fill:#161b22,stroke:#30363d,color:#e6edf3
+  style pipeline fill:#161b22,stroke:#30363d,color:#e6edf3
 ```
 
 ## API Endpoints
