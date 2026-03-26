@@ -108,7 +108,6 @@ def _render_and_extract(task: dict) -> dict | None:
         text = "\n".join(page.extract_text() or "" for page in reader.pages)
         os.unlink(tmp_path)
 
-        # skip if extraction produced almost nothing
         if len(text.split()) < 10:
             return None
 
@@ -122,10 +121,59 @@ def _render_and_extract(task: dict) -> dict | None:
         return None
 
 
+def _render_and_ocr(task: dict) -> dict | None:
+    """Render HTML to PDF, convert to image, OCR with Tesseract.
+
+    Produces the messy text a real scanned document would have.
+    Trained alongside pypdf text so the classifier handles both.
+    """
+    import cv2
+    import numpy as np
+    import pytesseract
+    from pdf2image import convert_from_path
+    from weasyprint import HTML
+
+    try:
+        pdf_bytes = HTML(string=task["html"]).write_pdf()
+
+        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
+            tmp.write(pdf_bytes)
+            tmp_path = tmp.name
+
+        # PDF -> image at 200 DPI
+        images = convert_from_path(tmp_path, dpi=200, first_page=1, last_page=1)
+        os.unlink(tmp_path)
+
+        if not images:
+            return None
+
+        # preprocess: grayscale + binarize (Otsu)
+        img = np.array(images[0])
+        gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+        _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+        # OCR
+        text = pytesseract.image_to_string(thresh, config="--oem 3 --psm 6")
+
+        if len(text.split()) < 10:
+            return None
+
+        return {
+            "id": task["id"] + "_ocr",
+            "label": task["label"],
+            "text": text,
+        }
+    except Exception as e:
+        logger.warning("Failed OCR for %s: %s", task["id"], e)
+        return None
+
+
 def main():
     parser = argparse.ArgumentParser(description="Generate classifier training data")
     parser.add_argument("--per-class", type=int, default=500, help="Samples per document class")
     parser.add_argument("--workers", type=int, default=max(1, os.cpu_count() - 4), help="Parallel workers")
+    parser.add_argument("--ocr-ratio", type=float, default=0.0,
+                        help="Fraction of samples to also generate as OCR text (0.0 to 1.0)")
     args = parser.parse_args()
 
     logger.info("Generating %d samples per class with %d workers", args.per_class, args.workers)
@@ -133,7 +181,7 @@ def main():
     # step 1: generate data + render HTML (fast, main process)
     tasks = _generate_tasks(args.per_class)
 
-    # step 2: render PDFs + extract text (slow, parallel)
+    # step 2: render PDFs + extract text with pypdf (parallel)
     results = process_map(
         _render_and_extract,
         tasks,
@@ -142,21 +190,39 @@ def main():
         desc="Rendering PDFs",
     )
 
-    # step 3: filter out failures and save
     samples = [r for r in results if r is not None]
-    failed = len(tasks) - len(samples)
+    logger.info("pypdf extraction: %d samples", len(samples))
 
+    # step 3: optionally also OCR a subset (much slower, ~2-3x per doc)
+    if args.ocr_ratio > 0:
+        import random
+        ocr_count = int(len(tasks) * args.ocr_ratio)
+        ocr_tasks = random.sample(tasks, ocr_count)
+        logger.info("Running OCR on %d samples (%.0f%%)...", ocr_count, args.ocr_ratio * 100)
+
+        ocr_results = process_map(
+            _render_and_ocr,
+            ocr_tasks,
+            max_workers=max(1, args.workers // 2),  # OCR is heavier, fewer workers
+            chunksize=5,
+            desc="OCR extraction",
+        )
+        ocr_samples = [r for r in ocr_results if r is not None]
+        logger.info("OCR extraction: %d samples", len(ocr_samples))
+        samples.extend(ocr_samples)
+
+    # step 4: save
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     with open(OUTPUT_PATH, "w") as f:
-        json.dump(samples, f, indent=2)
+        json.dump(samples, f)
 
-    # summary
     label_counts = {}
     for s in samples:
         label_counts[s["label"]] = label_counts.get(s["label"], 0) + 1
 
     logger.info("Saved %d samples to %s", len(samples), OUTPUT_PATH)
     logger.info("Per class: %s", label_counts)
+    failed = len(tasks) - len([r for r in results if r is not None])
     if failed:
         logger.warning("%d samples failed to render", failed)
 
