@@ -722,6 +722,7 @@ dependencies = [
     { name = "pydantic" },
     { name = "pypdf" },
     { name = "pytesseract" },
+    { name = "python-dotenv" },
     { name = "python-multipart" },
     { name = "scienceplots" },
     { name = "scikit-learn" },
@@ -736,6 +737,7 @@ dependencies = [
 dev = [
     { name = "kaggle" },
     { name = "pytest" },
+    { name = "roboflow" },
 ]
 
 [package.metadata]
@@ -757,6 +759,7 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.12.5" },
     { name = "pypdf", specifier = ">=6.9.2" },
     { name = "pytesseract", specifier = ">=0.3.13" },
+    { name = "python-dotenv", specifier = ">=1.2.2" },
     { name = "python-multipart", specifier = ">=0.0.22" },
     { name = "scienceplots", specifier = ">=2.2.1" },
     { name = "scikit-learn", specifier = ">=1.8.0" },
@@ -771,6 +774,7 @@ requires-dist = [
 dev = [
     { name = "kaggle", specifier = ">=2.0.0" },
     { name = "pytest", specifier = ">=9.0.2" },
+    { name = "roboflow", specifier = ">=0.1.1" },
 ]
 
 [[package]]
@@ -1586,6 +1590,15 @@ wheels = [
 ]
 
 [[package]]
+name = "python-dotenv"
+version = "1.2.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/82/ed/0301aeeac3e5353ef3d94b6ec08bbcabd04a72018415dcb29e588514bba8/python_dotenv-1.2.2.tar.gz", hash = "sha256:2c371a91fbd7ba082c2c1dc1f8bf89ca22564a087c2c287cd9b662adde799cf3", size = 50135, upload-time = "2026-03-01T16:00:26.196Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0b/d7/1959b9648791274998a9c3526f6d0ec8fd2233e4d4acce81bbae76b44b2a/python_dotenv-1.2.2-py3-none-any.whl", hash = "sha256:1d8214789a24de455a8b8bd8ae6fe3c6b69a5e3d64aa8a8e5d68e694bbcb285a", size = 22101, upload-time = "2026-03-01T16:00:25.09Z" },
+]
+
+[[package]]
 name = "python-multipart"
 version = "0.0.22"
 source = { registry = "https://pypi.org/simple" }
@@ -1677,6 +1690,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/34/64/8860370b167a9721e8956ae116825caff829224fbca0ca6e7bf8ddef8430/requests-2.33.0.tar.gz", hash = "sha256:c7ebc5e8b0f21837386ad0e1c8fe8b829fa5f544d8df3b2253bff14ef29d7652", size = 134232, upload-time = "2026-03-25T15:10:41.586Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/56/5d/c814546c2333ceea4ba42262d8c4d55763003e767fa169adc693bd524478/requests-2.33.0-py3-none-any.whl", hash = "sha256:3324635456fa185245e24865e810cecec7b4caf933d7eb133dcde67d48cee69b", size = 65017, upload-time = "2026-03-25T15:10:40.382Z" },
+]
+
+[[package]]
+name = "roboflow"
+version = "0.1.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/dd/67/f1391bfbfbdeb7757dbe3909fa06eebe7a9431819afe8d36a28779d25805/roboflow-0.1.1.tar.gz", hash = "sha256:e1aca6bd4c109755c34a57b566f660c486204239e14f4311be7e15539b6d36b9", size = 17625, upload-time = "2021-09-14T21:07:08.346Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/4a/0b/1876944a0e83dde757ee5ad74c088689b65a62e693a77db65e46a8567ad5/roboflow-0.1.1-py3-none-any.whl", hash = "sha256:9b232454916ba4a77df08903062f5289a11900e246b5fce5e8c613c32ea5aa76", size = 21421, upload-time = "2021-09-14T21:07:07.353Z" },
 ]
 
 [[package]]

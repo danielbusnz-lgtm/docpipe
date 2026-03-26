@@ -22,6 +22,7 @@ dependencies = [
     "pydantic>=2.12.5",
     "pypdf>=6.9.2",
     "pytesseract>=0.3.13",
+    "python-dotenv>=1.2.2",
     "python-multipart>=0.0.22",
     "scienceplots>=2.2.1",
     "scikit-learn>=1.8.0",
@@ -36,4 +37,5 @@ dependencies = [
 dev = [
     "kaggle>=2.0.0",
     "pytest>=9.0.2",
+    "roboflow>=0.1.1",
 ]
