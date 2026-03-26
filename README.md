@@ -1,52 +1,21 @@
 # InkVault
 
-Document processing pipeline that classifies PDFs, extracts structured data with AWS Bedrock (Claude), validates the output, and stores everything across S3, DynamoDB, and PostgreSQL. Exposed via FastAPI, deployed to Lambda with CDK.
+Document processing pipeline that classifies PDFs, extracts structured data with Claude, validates the output, and stores everything across S3, DynamoDB, and PostgreSQL. Exposed via FastAPI, deployed to Lambda with CDK.
 
 ## Architecture
 
-```
-                         ┌─────────────────┐
-                         │   API Gateway    │
-                         └────────┬────────┘
-                                  │
-                         ┌────────▼────────┐
-                         │  Lambda (API)    │
-                         │  FastAPI/Mangum  │
-                         └────────┬────────┘
-                                  │
-              ┌───────────────────┼───────────────────┐
-              │                   │                    │
-     ┌────────▼───────┐ ┌────────▼────────┐ ┌────────▼────────┐
-     │       S3       │ │    DynamoDB     │ │   PostgreSQL    │
-     │  raw PDFs      │ │  metadata +     │ │  structured     │
-     │                │ │  status         │ │  extractions    │
-     └────────┬───────┘ └─────────────────┘ └─────────────────┘
-              │
-     ┌────────▼────────┐
-     │ Lambda (Process) │
-     │  S3 trigger      │
-     └────────┬─────────┘
-              │
-   ┌──────────▼──────────┐
-   │   Processing Pipeline│
-   │                      │
-   │  1. Classify (TF-IDF)│
-   │  2. Extract (Bedrock)│
-   │  3. Validate         │
-   │  4. Store            │
-   └──────────────────────┘
-```
+![Architecture Diagram](diagrams/architecture.png)
 
 **Upload flow**: Client uploads PDF via API. S3 stores the raw file, DynamoDB tracks status, and a background task (or S3 trigger Lambda) runs the processing pipeline.
 
-**Processing pipeline**: The classifier (TF-IDF + LogisticRegression) determines the document type. Bedrock Claude extracts structured data using the Converse API with JSON schema enforcement. A validator checks math (line item totals, tax calculations) and required fields. Results go to PostgreSQL.
+**Processing pipeline**: The classifier (TF-IDF + LogisticRegression) determines the document type. Claude extracts structured data using the Anthropic API with JSON schema enforcement. A validator checks math (line item totals, tax calculations) and required fields. Results go to PostgreSQL.
 
 ## Tech Stack
 
 | Layer | Technology |
 |---|---|
 | API | FastAPI, Mangum (Lambda adapter) |
-| AI/ML | AWS Bedrock (Claude), scikit-learn |
+| AI/ML | Anthropic Claude API, scikit-learn |
 | Storage | S3, DynamoDB, PostgreSQL + SQLAlchemy 2.0 |
 | Infrastructure | AWS CDK (Python), Docker |
 | Training | WeasyPrint, Faker, Tesseract OCR, MLflow |
@@ -164,7 +133,8 @@ API docs at http://localhost:8000/docs.
 | `INKVAULT_S3_BUCKET` | `inkvault-documents` | S3 bucket name |
 | `INKVAULT_DYNAMO_TABLE` | `inkvault-metadata` | DynamoDB table name |
 | `INKVAULT_PG_URL` | `postgresql://inkvault:inkvault@localhost:5432/inkvault` | PostgreSQL connection string |
-| `INKVAULT_BEDROCK_MODEL` | `anthropic.claude-sonnet-4-20250514` | Bedrock model ID |
+| `ANTHROPIC_API_KEY` | None | Anthropic API key |
+| `INKVAULT_ANTHROPIC_MODEL` | `claude-sonnet-4-6` | Claude model ID |
 | `INKVAULT_S3_ENDPOINT` | None | LocalStack S3 endpoint |
 | `INKVAULT_DYNAMO_ENDPOINT` | None | LocalStack DynamoDB endpoint |
 | `LOG_LEVEL` | `INFO` | Logging level |
