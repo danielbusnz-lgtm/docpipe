@@ -135,7 +135,7 @@ aws --endpoint-url=http://localhost:4566 dynamodb create-table \
 uv run uvicorn src.main:app --reload
 ```
 
-API docs at http://localhost:8000/docs.
+Once running, interactive API docs are available at `/docs` (Swagger UI).
 
 ### Environment Variables
 
