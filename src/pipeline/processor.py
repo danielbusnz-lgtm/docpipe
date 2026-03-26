@@ -7,7 +7,6 @@ the document's status in DynamoDB so callers can poll progress.
 
 import logging
 import os
-from pathlib import Path
 
 from pypdf import PdfReader
 

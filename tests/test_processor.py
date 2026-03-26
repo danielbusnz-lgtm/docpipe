@@ -1,7 +1,5 @@
 """Test the pipeline processor with mocked services."""
 
-import json
-import tempfile
 from unittest.mock import MagicMock, patch
 
 import pytest

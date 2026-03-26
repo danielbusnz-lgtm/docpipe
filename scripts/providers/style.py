@@ -126,7 +126,7 @@ def generate_style() -> dict:
         "border_radius": f"{random.choice([0, 0, 2, 4, 6])}px",
         "header_border": random.choice([
             f"2px solid {accent}",
-            f"1px solid #ddd",
+            "1px solid #ddd",
             f"3px solid {accent}",
             "none",
         ]),

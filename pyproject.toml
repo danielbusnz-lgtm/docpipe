@@ -39,4 +39,5 @@ dev = [
     "kaggle>=2.0.0",
     "pytest>=9.0.2",
     "roboflow>=0.1.1",
+    "ruff>=0.15.8",
 ]

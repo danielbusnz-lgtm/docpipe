@@ -6,8 +6,6 @@ is actually good enough to train a classifier on.
 
 import json
 import re
-import sys
-from collections import Counter
 from pathlib import Path
 
 import pytest
@@ -174,7 +172,7 @@ class TestLengthDistribution:
         for label, texts in texts_by_label.items():
             lengths = [len(t.split()) for t in texts[:500]]
             avg = sum(lengths) / len(lengths)
-            std = (sum((l - avg) ** 2 for l in lengths) / len(lengths)) ** 0.5
+            std = (sum((x - avg) ** 2 for x in lengths) / len(lengths)) ** 0.5
             cv = std / max(avg, 1)  # coefficient of variation
             assert cv > 0.05, (
                 f"{label}: coefficient of variation {cv:.3f}, "

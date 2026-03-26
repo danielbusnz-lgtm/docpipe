@@ -91,7 +91,7 @@ class InkVaultStack(Stack):
         )
 
         # --- API Gateway ---
-        api = apigw.LambdaRestApi(
+        apigw.LambdaRestApi(
             self, "InkVaultApi",
             handler=api_function,
             proxy=True,  # forward all requests to FastAPI/Mangum

@@ -1,7 +1,6 @@
 """Test the full PDF generation and text extraction pipeline."""
 
 import re
-import sys
 from pathlib import Path
 
 import pytest
@@ -19,7 +18,8 @@ def _render_and_extract(template_name: str, data: dict) -> str:
     html = template.render(**data)
     pdf_bytes = HTML(string=html).write_pdf()
 
-    import tempfile, os
+    import tempfile
+    import os
     with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
         f.write(pdf_bytes)
         tmp = f.name
