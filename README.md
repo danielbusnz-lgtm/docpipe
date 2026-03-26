@@ -1,6 +1,13 @@
 # InkVault
 
-Document processing pipeline that classifies PDFs, extracts structured data with Claude, validates the output, and stores everything across S3, DynamoDB, and PostgreSQL. Exposed via FastAPI, deployed to Lambda with CDK.
+[![CI](https://github.com/danielbusnz-lgtm/inkvault/actions/workflows/ci.yml/badge.svg)](https://github.com/danielbusnz-lgtm/inkvault/actions/workflows/ci.yml)
+![Python 3.13](https://img.shields.io/badge/python-3.13-3776AB?style=flat-square&logo=python&logoColor=white)
+![License MIT](https://img.shields.io/badge/license-MIT-green?style=flat-square)
+![Tests 108](https://img.shields.io/badge/tests-108_passed-brightgreen?style=flat-square)
+
+Invoices, receipts, and contracts pile up. Someone has to read each one, pull out the vendor name, the total, the due date, and type it into a spreadsheet. InkVault automates that entire workflow.
+
+Upload a PDF. The pipeline classifies it (TF-IDF + LogisticRegression), extracts structured data with Claude, validates the math, and stores the results across S3, DynamoDB, and PostgreSQL. The whole thing runs on AWS Lambda behind a FastAPI REST API.
 
 ## Architecture
 
