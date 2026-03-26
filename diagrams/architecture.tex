@@ -31,7 +31,7 @@
 \definecolor{textprimary}{HTML}{161616}
 \definecolor{textsecondary}{HTML}{525252}
 \definecolor{arrowcolor}{HTML}{6F6F6F}
-\definecolor{bg}{HTML}{0D1117}
+\definecolor{bg}{HTML}{151B23}
 \definecolor{bglight}{HTML}{161B22}
 \pagecolor{bg}
 
@@ -105,8 +105,8 @@
   step/.default=teal,
   container/.style={
     rounded corners=10pt,
-    fill=white,
-    draw=white!30,
+    fill=none,
+    draw=white!20,
     line width=0.6pt,
     inner sep=14pt,
   },
@@ -208,14 +208,7 @@
     ($(current bounding box.north east) + (1,1)$);
   % outer border removed for dark theme
 
-  % Section containers
-  \node[container, fit=(s3)(dynamo)(pg),
-    label={[clabel]above left:{\textsf{STORAGE}}}
-  ] {};
-
-  \node[container, fit=(classify)(extract)(validate)(pstore),
-    label={[clabel]above left:{\textsf{PROCESSING PIPELINE}}}
-  ] {};
+  % Section containers removed
 \end{pgfonlayer}
 
 \end{tikzpicture}
