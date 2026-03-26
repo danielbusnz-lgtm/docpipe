@@ -55,10 +55,6 @@ class InvoiceExtractionRow(Base):
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc))
 
     document: Mapped["Document"] = relationship(back_populates="invoice_extraction")
-    line_items: Mapped[list["LineItemRow"]] = relationship(
-        back_populates="invoice_extraction",
-        foreign_keys="LineItemRow.extraction_id",
-    )
 
 
 class ReceiptExtractionRow(Base):
@@ -78,10 +74,6 @@ class ReceiptExtractionRow(Base):
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc))
 
     document: Mapped["Document"] = relationship(back_populates="receipt_extraction")
-    line_items: Mapped[list["LineItemRow"]] = relationship(
-        back_populates="receipt_extraction",
-        foreign_keys="LineItemRow.extraction_id",
-    )
 
 
 class ContractExtractionRow(Base):
@@ -123,13 +115,6 @@ class LineItemRow(Base):
     category: Mapped[Optional[str]] = mapped_column(String(100), default=None)
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc))
 
-    invoice_extraction: Mapped[Optional["InvoiceExtractionRow"]] = relationship(
-        back_populates="line_items",
-        foreign_keys=[extraction_id],
-        primaryjoin="LineItemRow.extraction_id == InvoiceExtractionRow.id",
-    )
-    receipt_extraction: Mapped[Optional["ReceiptExtractionRow"]] = relationship(
-        back_populates="line_items",
-        foreign_keys=[extraction_id],
-        primaryjoin="LineItemRow.extraction_id == ReceiptExtractionRow.id",
-    )
+    # no ORM relationship here because extraction_id can point to
+    # either invoice_extractions or receipt_extractions. We query
+    # line items directly by extraction_id + extraction_type instead.
