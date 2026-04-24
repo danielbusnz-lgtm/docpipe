@@ -71,7 +71,7 @@ def process_document(
 
         # --- step 2: extract ---
         if doc_type in (DocumentType.UNKNOWN, DocumentType.OTHER):
-            # skip Bedrock for unknown/other, nothing useful to extract
+            # skip Claude extraction for unknown/other, nothing useful to extract
             dynamo.update_status(dynamo_table, document_id, "completed")
             logger.info("Skipping extraction for %s (type=%s)", document_id, doc_type.value)
             return

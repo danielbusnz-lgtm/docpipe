@@ -1,6 +1,6 @@
 """Data shapes for the extraction pipeline.
 
-These Pydantic models define what Bedrock Claude returns after
+These Pydantic models define what Claude returns via the Anthropic API after
 processing a document. Every other module consumes these: the
 validator checks them, storage writes them to Postgres, the API
 returns them.
@@ -47,7 +47,7 @@ class LineItem(BaseModel):
 
 
 class InvoiceExtraction(BaseModel):
-    """What Bedrock returns after parsing an invoice.
+    """What Claude returns after parsing an invoice.
 
     Dates come back as strings because Claude's format is
     unpredictable (MM/DD/YYYY, "January 5, 2025", etc.).
@@ -67,7 +67,7 @@ class InvoiceExtraction(BaseModel):
 
 
 class ReceiptExtraction(BaseModel):
-    """What Bedrock returns after parsing a receipt.
+    """What Claude returns after parsing a receipt.
 
     Receipts differ from invoices: they represent completed payments
     (no due_date or payment_terms), and include payment_method instead.
@@ -83,7 +83,7 @@ class ReceiptExtraction(BaseModel):
 
 
 class ContractExtraction(BaseModel):
-    """What Bedrock returns after parsing a contract.
+    """What Claude returns after parsing a contract.
 
     Structurally different from invoice/receipt: no line items or
     totals, but has parties, legal terms, and date ranges instead.

@@ -3,9 +3,13 @@
 [![CI](https://github.com/danielbusnz-lgtm/inkvault/actions/workflows/ci.yml/badge.svg)](https://github.com/danielbusnz-lgtm/inkvault/actions/workflows/ci.yml)
 ![Python 3.13](https://img.shields.io/badge/python-3.13-3776AB?style=flat-square&logo=python&logoColor=white)
 ![License MIT](https://img.shields.io/badge/license-MIT-green?style=flat-square)
-![Tests 108](https://img.shields.io/badge/tests-108_passed-brightgreen?style=flat-square)
+![Tests 105](https://img.shields.io/badge/tests-105_passed-brightgreen?style=flat-square)
 
 Invoices, receipts, and contracts pile up. Someone has to read each one, pull out the vendor name, the total, the due date, and type it into a spreadsheet. InkVault automates that entire workflow.
+
+## Why I built this
+
+I'm a self-taught developer applying to graduate programs in computer science, and I wanted a project that would force me to confront the parts of software engineering I had never learned formally: cloud infrastructure, async pipelines, data modeling across three storage layers, and building an ML classifier from scratch instead of calling a pre-trained API. InkVault is that project. The document-automation problem is deliberately mundane because the interesting parts aren't the prompt engineering; they're the glue between S3, DynamoDB, Postgres, the classifier, and the validator, and writing that glue end-to-end is how I learned what I didn't know.
 
 Upload a PDF. The pipeline classifies it (TF-IDF + LogisticRegression), extracts structured data with Claude, validates the math, and stores the results across S3, DynamoDB, and PostgreSQL. The whole thing runs on AWS Lambda behind a FastAPI REST API.
 
@@ -156,7 +160,7 @@ Infrastructure is defined in CDK (Python). The stack creates:
 - DynamoDB table with a `status-created_at` GSI
 - Two Lambda functions (API handler + S3 trigger processor)
 - API Gateway (proxy mode, routes everything to FastAPI)
-- IAM policies for Bedrock, S3, and DynamoDB access
+- IAM policies for S3 and DynamoDB access (Anthropic API keys are supplied via Lambda environment variables)
 
 ```bash
 cd infra

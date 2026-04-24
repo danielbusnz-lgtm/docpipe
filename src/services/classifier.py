@@ -2,7 +2,7 @@
 
 Load the trained TF-IDF + LogisticRegression pipeline and classify
 incoming document text. Used by the pipeline processor to route
-documents to the correct Bedrock extraction prompt.
+documents to the correct Claude extraction prompt.
 
 The model is loaded once on first call and cached in memory.
 """
@@ -43,7 +43,7 @@ def classify(text: str, model=None) -> tuple[str, float]:
     Returns (doc_type, confidence). If confidence is below the
     threshold or the text is too short, returns ("unknown", score).
     The pipeline processor uses this to decide whether to send the
-    document to Bedrock or flag it for human review.
+    document to Claude or flag it for human review.
 
     Args:
         text: Raw text extracted from a PDF by pypdf.
